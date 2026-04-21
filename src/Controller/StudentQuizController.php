@@ -104,6 +104,7 @@ class StudentQuizController extends AbstractController
         }
 
         $prompt = $this->buildCourseChatPrompt($course, $history, $message);
+        $lastErrorMessage = '';
 
         foreach ($models as $model) {
             try {
@@ -131,6 +132,7 @@ class StudentQuizController extends AbstractController
                     'model' => $model,
                 ]);
             } catch (\Throwable) {
+                $lastErrorMessage = 'Unable to contact Hugging Face endpoint.';
                 continue;
             }
         }
@@ -138,6 +140,7 @@ class StudentQuizController extends AbstractController
         return new JsonResponse([
             'answer' => $this->buildFallbackChatbotAnswer($course, $message),
             'model' => 'fallback-local',
+            'error' => $lastErrorMessage !== '' ? $lastErrorMessage : 'Remote model unavailable.',
         ]);
     }
 
@@ -311,21 +314,25 @@ class StudentQuizController extends AbstractController
 
     private function requestChatbotCompletion(HttpClientInterface $httpClient, string $apiKey, string $model, string $prompt): array
     {
-        $response = $httpClient->request('POST', 'https://api-inference.huggingface.co/models/' . $model, [
+        $response = $httpClient->request('POST', 'https://router.huggingface.co/v1/chat/completions', [
             'headers' => [
                 'Authorization' => 'Bearer ' . $apiKey,
                 'Content-Type' => 'application/json',
             ],
             'json' => [
-                'inputs' => $prompt,
-                'parameters' => [
-                    'max_new_tokens' => 260,
-                    'temperature' => 0.3,
-                    'return_full_text' => false,
+                'model' => $model,
+                'messages' => [
+                    [
+                        'role' => 'system',
+                        'content' => 'You are an educational assistant for LearnWay students. Be clear, concise, and helpful.',
+                    ],
+                    [
+                        'role' => 'user',
+                        'content' => $prompt,
+                    ],
                 ],
-                'options' => [
-                    'wait_for_model' => true,
-                ],
+                'temperature' => 0.3,
+                'max_tokens' => 320,
             ],
             'timeout' => 40,
         ]);
@@ -337,6 +344,10 @@ class StudentQuizController extends AbstractController
     {
         if (isset($result['error']) && is_string($result['error'])) {
             return '';
+        }
+
+        if (isset($result['choices'][0]['message']['content']) && is_string($result['choices'][0]['message']['content'])) {
+            return trim($result['choices'][0]['message']['content']);
         }
 
         if (isset($result[0]['generated_text']) && is_string($result[0]['generated_text'])) {

@@ -4,6 +4,8 @@
 
 {% block body %}
 {% set chatbotToken = csrf_token('student_course_chatbot_' ~ course.id) %}
+{% set chatbotAvatar = asset('chatbot.png') %}
+{% set userAvatar = (app.user and app.user.profileImage) ? asset('uploads/profile/' ~ app.user.profileImage) : asset('profil.jpg') %}
 <main class="student-home student-forum-page">
     <div class="student-home__container">
         <header class="student-topbar">
@@ -116,9 +118,11 @@
             data-course-chatbot
             data-chat-endpoint="{{ path('app_student_course_chatbot', {id: course.id}) }}"
             data-chat-token="{{ chatbotToken }}"
+            data-chatbot-avatar="{{ chatbotAvatar }}"
+            data-user-avatar="{{ userAvatar }}"
         >
             <button class="student-course-chatbot__toggle" type="button" aria-label="Open course assistant" aria-expanded="false">
-                <span>AI</span>
+                <img src="{{ chatbotAvatar }}" alt="Chatbot assistant">
             </button>
 
             <section class="student-course-chatbot__panel" hidden>
@@ -129,7 +133,8 @@
 
                 <div class="student-course-chatbot__messages" aria-live="polite">
                     <article class="student-course-chatbot__message student-course-chatbot__message--assistant">
-                        Hi! I can help you understand this course and prepare for quizzes.
+                        <img class="student-course-chatbot__avatar" src="{{ chatbotAvatar }}" alt="Chatbot">
+                        <p class="student-course-chatbot__bubble">Hi! I can help you understand this course and prepare for quizzes.</p>
                     </article>
                 </div>
 
@@ -152,6 +157,8 @@
 
     const endpoint = root.dataset.chatEndpoint;
     const token = root.dataset.chatToken;
+    const chatbotAvatar = root.dataset.chatbotAvatar;
+    const userAvatar = root.dataset.userAvatar;
     const toggleButton = root.querySelector('.student-course-chatbot__toggle');
     const closeButton = root.querySelector('.student-course-chatbot__close');
     const panel = root.querySelector('.student-course-chatbot__panel');
@@ -159,7 +166,7 @@
     const textarea = form?.querySelector('textarea[name="message"]');
     const messages = root.querySelector('.student-course-chatbot__messages');
 
-    if (!endpoint || !token || !toggleButton || !closeButton || !panel || !form || !textarea || !messages) {
+    if (!endpoint || !token || !chatbotAvatar || !userAvatar || !toggleButton || !closeButton || !panel || !form || !textarea || !messages) {
         return;
     }
 
@@ -168,7 +175,18 @@
     const appendMessage = (text, role) => {
         const messageNode = document.createElement('article');
         messageNode.className = `student-course-chatbot__message student-course-chatbot__message--${role}`;
-        messageNode.textContent = text;
+
+        const avatarNode = document.createElement('img');
+        avatarNode.className = 'student-course-chatbot__avatar';
+        avatarNode.src = role === 'assistant' ? chatbotAvatar : userAvatar;
+        avatarNode.alt = role === 'assistant' ? 'Chatbot' : 'User';
+
+        const bubbleNode = document.createElement('p');
+        bubbleNode.className = 'student-course-chatbot__bubble';
+        bubbleNode.textContent = text;
+
+        messageNode.appendChild(avatarNode);
+        messageNode.appendChild(bubbleNode);
         messages.appendChild(messageNode);
         messages.scrollTop = messages.scrollHeight;
     };

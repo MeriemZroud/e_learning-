@@ -2528,6 +2528,15 @@ a {
     letter-spacing: 0.02em;
     box-shadow: 0 12px 24px rgba(18, 88, 92, 0.35);
     transition: transform 0.18s ease, box-shadow 0.2s ease;
+    padding: 0;
+    overflow: hidden;
+}
+
+.student-course-chatbot__toggle img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
 }
 
 .student-course-chatbot__toggle:hover,
@@ -2587,6 +2596,34 @@ a {
 
 .student-course-chatbot__message {
     max-width: 90%;
+    display: flex;
+    align-items: flex-end;
+    gap: 0.5rem;
+}
+
+.student-course-chatbot__message--assistant {
+    justify-self: start;
+}
+
+.student-course-chatbot__message--user {
+    justify-self: end;
+}
+
+.student-course-chatbot__message--user .student-course-chatbot__avatar {
+    order: 2;
+}
+
+.student-course-chatbot__avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    object-fit: cover;
+    border: 1px solid rgba(191, 230, 229, 1);
+    flex-shrink: 0;
+}
+
+.student-course-chatbot__bubble {
+    margin: 0;
     border-radius: 12px;
     padding: 0.56rem 0.62rem;
     font-size: 0.9rem;
@@ -2594,14 +2631,12 @@ a {
     color: var(--text);
 }
 
-.student-course-chatbot__message--assistant {
-    justify-self: start;
+.student-course-chatbot__message--assistant .student-course-chatbot__bubble {
     background: rgba(77, 187, 192, 0.15);
     border: 1px solid rgba(77, 187, 192, 0.35);
 }
 
-.student-course-chatbot__message--user {
-    justify-self: end;
+.student-course-chatbot__message--user .student-course-chatbot__bubble {
     background: #fff;
     border: 1px solid rgba(191, 230, 229, 1);
 }
