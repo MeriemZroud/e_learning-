@@ -1,0 +1,77 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Take Quiz{% endblock %}
+
+{% block body %}
+<main class="student-home student-forum-page">
+    <div class="student-home__container">
+        <header class="student-topbar">
+            <a class="student-logo" href="{{ path('app_student_dashboard') }}">LearnWay</a>
+            <nav class="student-nav" aria-label="Main navigation">
+                <a href="{{ path('app_student_dashboard') }}">Home</a>
+                <a href="{{ path('app_student_quiz_index') }}" class="is-active">Course</a>
+                <a href="#">Career</a>
+                <a href="{{ path('app_student_forum_index') }}">Blog</a>
+                <a href="{{ path('app_student_profile') }}">Profile</a>
+                <a href="{{ path('app_student_about') }}">About us</a>
+            </nav>
+            <div class="student-user">
+                {% if app.user and app.user.profileImage %}
+                    <img class="student-user__avatar student-user__avatar-image" src="{{ asset('uploads/profile/' ~ app.user.profileImage) }}" alt="{{ student_name }} avatar">
+                {% else %}
+                    <span class="student-user__avatar">{{ student_name|slice(0, 1)|upper }}</span>
+                {% endif %}
+                <span class="student-user__name">{{ student_name }}</span>
+            </div>
+        </header>
+
+        <section class="student-forum-hero">
+            <div>
+                <p class="student-forum-hero__kicker">Quiz assignment</p>
+                <h1>{{ quiz.title }}</h1>
+                <p>{{ quiz.sourceSummary|default('Answer all questions then submit your assignment.') }}</p>
+            </div>
+            <a class="student-btn" href="{{ path('app_student_quiz_index') }}">Back to quizzes</a>
+        </section>
+
+        <section class="student-section">
+            <form method="post" class="student-profile-form">
+                <input type="hidden" name="_token" value="{{ csrf_token('student_quiz_submit_' ~ quiz.id) }}">
+
+                <div class="teacher-quiz-list">
+                    {% for question in questions %}
+                        <article class="student-related-card">
+                            <div class="student-related-card__content">
+                                <p class="student-related-card__tag">Question {{ loop.index }}</p>
+                                <h3>{{ question.question }}</h3>
+                                <div class="student-quiz-options">
+                                    {% for option in question.options %}
+                                        <label>
+                                            <input type="radio" name="answers[{{ loop.parent.loop.index0 }}]" value="{{ loop.index0 }}" required>
+                                            <span>{{ option }}</span>
+                                        </label>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </article>
+                    {% endfor %}
+                </div>
+
+                <div class="student-profile-form__actions">
+                    <a class="student-btn" href="{{ path('app_student_quiz_index') }}">Cancel</a>
+                    <button type="submit" class="student-btn student-btn--primary">Submit assignment</button>
+                </div>
+            </form>
+
+            {% if submission and submission.score is not null %}
+                <article class="student-related-card" style="margin-top: 1rem;">
+                    <div class="student-related-card__content">
+                        <p class="student-related-card__tag">Last submission</p>
+                        <h3>Your current score: {{ submission.score }}/20</h3>
+                    </div>
+                </article>
+            {% endif %}
+        </section>
+    </div>
+</main>
+{% endblock %}

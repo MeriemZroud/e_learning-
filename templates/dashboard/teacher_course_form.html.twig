@@ -1,0 +1,96 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ is_edit ? 'Edit Course' : 'Add Course' }}{% endblock %}
+
+{% block body %}
+<main class="student-home teacher-courses-page">
+    <div class="student-home__container">
+        <header class="student-topbar">
+            <a class="student-logo" href="{{ path('app_teacher_course_index') }}">LearnWay</a>
+            <nav class="student-nav" aria-label="Teacher navigation">
+                <a href="{{ path('app_teacher_course_index') }}">Courses</a>
+                <a href="{{ path('app_teacher_course_new') }}" class="{% if not is_edit %}is-active{% endif %}">Add course</a>
+                <a href="{{ path('app_teacher_submissions') }}">Submissions</a>
+                <a href="{{ path('app_logout') }}">Logout</a>
+            </nav>
+            <div class="student-user">
+                {% if app.user and app.user.profileImage %}
+                    <img class="student-user__avatar student-user__avatar-image" src="{{ asset('uploads/profile/' ~ app.user.profileImage) }}" alt="{{ teacher_name }} avatar">
+                {% else %}
+                    <span class="student-user__avatar">{{ teacher_name|slice(0, 1)|upper }}</span>
+                {% endif %}
+                <span class="student-user__name">{{ teacher_name }}</span>
+            </div>
+        </header>
+
+        <section class="student-profile-hero teacher-courses-hero">
+            <div>
+                <p class="student-profile-hero__kicker">Teacher dashboard</p>
+                <h1>{{ is_edit ? 'Edit course' : 'Add a new video course' }}</h1>
+                <p>Use a public video URL (YouTube or direct link) to publish your lesson.</p>
+            </div>
+            <a class="student-btn" href="{{ path('app_teacher_course_index') }}">Back to courses</a>
+        </section>
+
+        <section class="student-profile-layout teacher-course-form-layout">
+            <article class="student-profile-card student-profile-card--form">
+                {% for label, messages in app.flashes %}
+                    {% for message in messages %}
+                        <div class="student-forum-alert {% if label == 'error' %}student-forum-alert--error{% endif %}">{{ message }}</div>
+                    {% endfor %}
+                {% endfor %}
+
+                <h2>{{ is_edit ? 'Update course details' : 'Course details' }}</h2>
+
+                <form method="post" enctype="multipart/form-data" class="student-profile-form">
+                    <input type="hidden" name="_token" value="{{ csrf_token('teacher_course_save') }}">
+
+                    <div class="student-profile-grid">
+                        <div>
+                            <label for="course_title">Title</label>
+                            <input id="course_title" type="text" name="title" value="{{ course.title|default('') }}" maxlength="255" required>
+                        </div>
+
+                        <div>
+                            <label for="course_video_url">Video URL</label>
+                            <input id="course_video_url" type="url" name="video_url" value="{{ course.videoUrl|default('') }}" maxlength="1024" required>
+                        </div>
+
+                        <div>
+                            <label for="course_thumbnail_url">Thumbnail URL (optional)</label>
+                            <input id="course_thumbnail_url" type="url" name="thumbnail_url" value="{{ course.thumbnailUrl|default('') }}" maxlength="1024">
+                        </div>
+
+                        <div>
+                            <label for="course_pdf_file">PDF File (optional)</label>
+                            <input id="course_pdf_file" type="file" name="pdf_file" accept="application/pdf,.pdf">
+                            <small class="student-profile-upload-hint">Accepted format: PDF, maximum 10 MB.</small>
+                            {% if course.pdfFile %}
+                                <small class="student-profile-upload-hint">
+                                    Current file:
+                                    <a href="{{ asset('uploads/courses/pdf/' ~ course.pdfFile) }}" target="_blank" rel="noopener">Open PDF</a>
+                                </small>
+                            {% endif %}
+                        </div>
+
+                        <div class="teacher-course-form__toggle">
+                            <label for="course_is_published">Published</label>
+                            <input id="course_is_published" type="checkbox" name="is_published" value="1" {% if course.isPublished %}checked{% endif %}>
+                        </div>
+
+                        <div class="teacher-course-form__description">
+                            <label for="course_description">Description</label>
+                            <textarea id="course_description" name="description" rows="7" maxlength="4000" placeholder="Explain what students will learn in this course...">{{ course.description|default('') }}</textarea>
+                        </div>
+                    </div>
+
+                    <div class="student-profile-form__actions">
+                        <a class="student-btn" href="{{ path('app_teacher_course_index') }}">Cancel</a>
+                        <button type="submit" class="student-btn student-btn--primary">{{ is_edit ? 'Save changes' : 'Create course' }}</button>
+                    </div>
+                </form>
+            </article>
+        </section>
+    </div>
+</main>
+{% endblock %}

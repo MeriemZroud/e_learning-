@@ -1,0 +1,48 @@
+<article class="student-forum-comment" style="--comment-level: {{ level|default(0) }};">
+    <header>
+        <strong>{{ comment.user ? (comment.user.firstName ~ ' ' ~ comment.user.lastName)|trim : 'Unknown student' }}</strong>
+        <span>{{ comment.createdAt ? comment.createdAt|date('d/m/Y H:i') : '-' }}</span>
+    </header>
+
+    <p>{{ comment.content|nl2br }}</p>
+
+    <div class="student-forum-comment__actions">
+        <details>
+            <summary class="student-comment-link">Reply</summary>
+            <form method="post" action="{{ path('app_student_forum_comment_create', {id: post.id}) }}" class="student-forum-form student-forum-form--inline">
+                <input type="hidden" name="_token" value="{{ csrf_token('forum_comment_create_' ~ post.id) }}">
+                <input type="hidden" name="parent_id" value="{{ comment.id }}">
+                <input type="text" name="content" maxlength="600" placeholder="Write a reply" required>
+                <button type="submit" class="student-btn">Send</button>
+            </form>
+        </details>
+
+        {% if app.user and comment.user and app.user.id == comment.user.id %}
+            <details>
+                <summary class="student-icon-btn" title="Edit comment" aria-label="Edit comment">&#9998;</summary>
+                <form method="post" action="{{ path('app_student_forum_comment_edit', {id: comment.id}) }}" class="student-forum-form student-forum-form--inline">
+                    <input type="hidden" name="_token" value="{{ csrf_token('forum_comment_edit_' ~ comment.id) }}">
+                    <input type="text" name="content" maxlength="600" value="{{ comment.content }}" required>
+                    <button type="submit" class="student-btn">Save</button>
+                </form>
+            </details>
+
+            <form method="post" action="{{ path('app_student_forum_comment_delete', {id: comment.id}) }}" onsubmit="return confirm('Delete this comment and its replies?');">
+                <input type="hidden" name="_token" value="{{ csrf_token('forum_comment_delete_' ~ comment.id) }}">
+                <button type="submit" class="student-icon-btn student-icon-btn--danger" title="Delete comment" aria-label="Delete comment">&#128465;</button>
+            </form>
+        {% endif %}
+    </div>
+
+    {% if comment.forumComments is not empty %}
+        <div class="student-forum-comment__children">
+            {% for child in comment.forumComments %}
+                {% include 'dashboard/student_forum_comment.html.twig' with {
+                    comment: child,
+                    post: post,
+                    level: (level|default(0)) + 1
+                } only %}
+            {% endfor %}
+        </div>
+    {% endif %}
+</article>

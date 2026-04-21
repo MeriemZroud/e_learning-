@@ -1,0 +1,106 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Teacher Courses{% endblock %}
+
+{% block body %}
+<main class="student-home teacher-courses-page">
+    <div class="student-home__container">
+        <header class="student-topbar">
+            <a class="student-logo" href="{{ path('app_teacher_course_index') }}">LearnWay</a>
+            <nav class="student-nav" aria-label="Teacher navigation">
+                <a href="{{ path('app_teacher_course_index') }}" class="is-active">Courses</a>
+                <a href="{{ path('app_teacher_course_new') }}">Add course</a>
+                <a href="{{ path('app_teacher_submissions') }}">Submissions</a>
+                <a href="{{ path('app_logout') }}">Logout</a>
+            </nav>
+            <div class="student-user">
+                {% if app.user and app.user.profileImage %}
+                    <img class="student-user__avatar student-user__avatar-image" src="{{ asset('uploads/profile/' ~ app.user.profileImage) }}" alt="{{ teacher_name }} avatar">
+                {% else %}
+                    <span class="student-user__avatar">{{ teacher_name|slice(0, 1)|upper }}</span>
+                {% endif %}
+                <span class="student-user__name">{{ teacher_name }}</span>
+            </div>
+        </header>
+
+        <section class="student-profile-hero teacher-courses-hero">
+            <div>
+                <p class="student-profile-hero__kicker">Teacher dashboard</p>
+                <h1>Your video courses</h1>
+                <p>Create and manage your course catalog with Udemy-style video links.</p>
+            </div>
+            <a class="student-btn student-btn--primary" href="{{ path('app_teacher_course_new') }}">Add new course</a>
+        </section>
+
+        <section class="student-section">
+            {% for label, messages in app.flashes %}
+                {% for message in messages %}
+                    <div class="student-forum-alert {% if label == 'error' %}student-forum-alert--error{% endif %}">{{ message }}</div>
+                {% endfor %}
+            {% endfor %}
+
+            {% if courses is empty %}
+                <article class="student-related-card">
+                    <div class="student-related-card__content">
+                        <h3>No courses yet</h3>
+                        <p>Start by adding your first video course.</p>
+                        <a class="student-btn student-btn--primary" href="{{ path('app_teacher_course_new') }}">Create first course</a>
+                    </div>
+                </article>
+            {% else %}
+                <div class="teacher-course-grid">
+                    {% for course in courses %}
+                        {% set embedUrl = course.videoUrl %}
+                        {% if 'youtube.com/watch?v=' in course.videoUrl %}
+                            {% set embedUrl = course.videoUrl|replace({'watch?v=': 'embed/'}) %}
+                        {% elseif 'youtu.be/' in course.videoUrl %}
+                            {% set videoCode = (course.videoUrl|split('youtu.be/')|last)|split('?')|first %}
+                            {% set embedUrl = 'https://www.youtube.com/embed/' ~ videoCode %}
+                        {% endif %}
+
+                        <article class="teacher-course-card">
+                            <div class="teacher-course-card__media">
+                                {% if 'youtube.com/embed/' in embedUrl %}
+                                    <iframe src="{{ embedUrl }}" title="{{ course.title }}" loading="lazy" allowfullscreen></iframe>
+                                {% elseif course.thumbnailUrl %}
+                                    <img src="{{ course.thumbnailUrl }}" alt="{{ course.title }} preview" loading="lazy">
+                                {% else %}
+                                    <div class="teacher-course-card__placeholder">Video Preview</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="teacher-course-card__body">
+                                <div class="teacher-course-card__head">
+                                    <h3>{{ course.title }}</h3>
+                                    <span class="teacher-course-status {% if course.isPublished %}is-published{% else %}is-draft{% endif %}">
+                                        {{ course.isPublished ? 'Published' : 'Draft' }}
+                                    </span>
+                                </div>
+                                <p>{{ course.description|default('No description provided yet.') }}</p>
+                                <div class="teacher-course-card__meta">
+                                    <span>{{ course.createdAt ? course.createdAt|date('d/m/Y') : '-' }}</span>
+                                    <a href="{{ course.videoUrl }}" target="_blank" rel="noopener">Open video</a>
+                                </div>
+                                {% if course.pdfFile %}
+                                    <div class="teacher-course-card__meta">
+                                        <span>Course document</span>
+                                        <a href="{{ asset('uploads/courses/pdf/' ~ course.pdfFile) }}" target="_blank" rel="noopener">Open PDF</a>
+                                    </div>
+                                {% endif %}
+                                <div class="teacher-course-card__actions">
+                                    <a class="student-btn" href="{{ path('app_teacher_course_quiz', {id: course.id}) }}">Quiz IA</a>
+                                    <a class="student-btn" href="{{ path('app_teacher_course_edit', {id: course.id}) }}">Edit</a>
+                                    <form method="post" action="{{ path('app_teacher_course_delete', {id: course.id}) }}" onsubmit="return confirm('Delete this course?');">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('teacher_course_delete_' ~ course.id) }}">
+                                        <button type="submit" class="student-btn student-btn--danger">Delete</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </article>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </section>
+    </div>
+</main>
+{% endblock %}

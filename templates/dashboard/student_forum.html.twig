@@ -1,0 +1,355 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Student Blog Forum{% endblock %}
+
+{% block body %}
+<main class="student-home student-forum-page">
+    <div class="student-home__container">
+        <header class="student-topbar">
+            <a class="student-logo" href="{{ path('app_student_dashboard') }}">LearnWay</a>
+            <nav class="student-nav" aria-label="Main navigation">
+                <a href="{{ path('app_student_dashboard') }}">Home</a>
+                <a href="{{ path('app_student_quiz_index') }}">Course</a>
+                <a href="#">Career</a>
+                <a href="{{ path('app_student_forum_index') }}" class="is-active">Blog</a>
+                <a href="{{ path('app_student_profile') }}">Profile</a>
+                <a href="{{ path('app_student_about') }}">About us</a>
+            </nav>
+            <div class="student-user">
+                {% if app.user and app.user.profileImage %}
+                    <img class="student-user__avatar student-user__avatar-image" src="{{ asset('uploads/profile/' ~ app.user.profileImage) }}" alt="{{ app.user.firstName|default('Student') }} avatar">
+                {% else %}
+                    <span class="student-user__avatar">{{ app.user.firstName|default('S')|slice(0, 1)|upper }}</span>
+                {% endif %}
+                <span class="student-user__name">{{ app.user.firstName|default('Student') }}</span>
+            </div>
+        </header>
+
+        <section class="student-forum-hero">
+            <div>
+                <p class="student-forum-hero__kicker">Student Community</p>
+                <h1>Blog & Forum</h1>
+                <p>Create posts, share ideas, reply to comments, and rate each post from 1 to 5.</p>
+            </div>
+            <a class="student-btn" href="{{ path('app_student_dashboard') }}">Back to dashboard</a>
+        </section>
+
+        <section class="student-forum-wrap">
+            <aside class="student-forum-composer">
+                <h2>Create a post</h2>
+                <form method="post" action="{{ path('app_student_forum_post_create') }}" class="student-forum-form">
+                    <input type="hidden" name="_token" value="{{ csrf_token('forum_post_create') }}">
+                    <label for="forum_title">Title</label>
+                    <input id="forum_title" type="text" name="title" maxlength="255" placeholder="Example: Best Symfony tips for beginners" required>
+
+                    <label for="forum_content">Content</label>
+                    <textarea id="forum_content" name="content" rows="6" placeholder="Write your post content..." required></textarea>
+
+                    <button type="submit" class="student-btn student-btn--primary">Publish post</button>
+                </form>
+            </aside>
+
+            <section class="student-forum-list" aria-label="Forum posts">
+                {% for label, messages in app.flashes %}
+                    {% for message in messages %}
+                        <div class="student-forum-alert {% if label == 'error' %}student-forum-alert--error{% endif %}">{{ message }}</div>
+                    {% endfor %}
+                {% endfor %}
+
+                <form method="get" class="student-forum-filter" aria-label="Search posts">
+                    <div class="student-forum-filter__grid">
+                        <div class="student-forum-filter__item student-forum-filter__search">
+                            <span class="student-forum-filter__icon">🔍</span>
+                            <input type="text" name="search" value="{{ search }}" maxlength="255" placeholder="Search by title or content..." class="student-forum-filter__input" data-filter>
+                        </div>
+                    </div>
+                </form>
+
+                <script>
+                    const filterForm = document.querySelector('.student-forum-filter');
+                    if (filterForm) {
+                        const searchInput = filterForm.querySelector('[data-filter]');
+                        let debounceTimer;
+                        
+                        if (searchInput) {
+                            searchInput.addEventListener('keyup', () => {
+                                clearTimeout(debounceTimer);
+                                debounceTimer = setTimeout(() => filterForm.submit(), 600);
+                            });
+                        }
+                    }
+                </script>
+
+                {% if posts is empty %}
+                    <article class="student-forum-post">
+                        <h3>No post yet</h3>
+                        <p>{% if search or author_id %}No results match your filters.{% else %}Be the first student to create a post.{% endif %}</p>
+                    </article>
+                {% endif %}
+
+                {% for post in posts %}
+                    {% set topLevelComments = post.forumComments|filter(c => c.forumComment is null) %}
+                    <article class="student-forum-post">
+                        <header class="student-forum-post__header">
+                            <div>
+                                <h3>{{ post.title }}</h3>
+                                <p>
+                                    by {{ post.user ? (post.user.firstName ~ ' ' ~ post.user.lastName)|trim : 'Unknown' }}
+                                    · {{ post.createdAt ? post.createdAt|date('d/m/Y H:i') : '-' }}
+                                </p>
+                            </div>
+                            {% if app.user and post.user and app.user.id == post.user.id %}
+                                <details class="student-forum-editbox">
+                                    <summary>Edit</summary>
+                                    <form method="post" action="{{ path('app_student_forum_post_edit', {id: post.id}) }}" class="student-forum-form student-forum-form--compact">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('forum_post_edit_' ~ post.id) }}">
+                                        <label for="edit_title_{{ post.id }}">Title</label>
+                                        <input id="edit_title_{{ post.id }}" type="text" name="title" value="{{ post.title }}" maxlength="255" required>
+                                        <label for="edit_content_{{ post.id }}">Content</label>
+                                        <textarea id="edit_content_{{ post.id }}" name="content" rows="4" required>{{ post.content }}</textarea>
+                                        <div class="student-forum-inline-actions">
+                                            <button type="submit" class="student-btn student-btn--primary">Save</button>
+                                            <button type="submit" class="student-btn student-btn--danger" formaction="{{ path('app_student_forum_post_delete', {id: post.id}) }}" onclick="return confirm('Delete this post?');">Delete</button>
+                                        </div>
+                                    </form>
+                                </details>
+                            {% endif %}
+                        </header>
+
+                        <p class="student-forum-post__content">{{ post.content|nl2br }}</p>
+
+                        <section class="student-forum-rating">
+                            <h4>Rate this post</h4>
+                            <div class="student-rating-row">
+                                <form method="post" action="{{ path('app_student_forum_post_rate', {id: post.id}) }}" class="student-rating-stars">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('forum_post_rate_' ~ post.id) }}">
+                                    <input type="hidden" name="rating" value="{{ post.forumReview ? post.forumReview.rating : 0 }}" class="student-rating-stars__value">
+                                    {% set currentRating = post.forumReview ? post.forumReview.rating : 0 %}
+                                    {% for star in 1..5 %}
+                                        <button
+                                            type="button"
+                                            data-rating="{{ star }}"
+                                            class="student-rating-stars__button {% if currentRating >= star %}is-filled{% endif %}"
+                                            title="Rate {{ star }} out of 5"
+                                            aria-label="Rate {{ star }} out of 5"
+                                        >&#9733;</button>
+                                    {% endfor %}
+                                </form>
+                                <form method="post" action="{{ path('app_student_forum_post_rate_delete', {id: post.id}) }}" class="student-rating-delete-form" onsubmit="return confirm('Delete this rating?');">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('forum_post_rate_delete_' ~ post.id) }}">
+                                    <button type="submit" class="student-icon-btn student-icon-btn--danger" title="Delete rating" aria-label="Delete rating">&#128465;</button>
+                                </form>
+                            </div>
+                            <p class="student-forum-rating__meta">
+                                Current rating: <strong>{{ post.forumReview ? post.forumReview.rating ~ '/5' : 'Not rated' }}</strong>
+                            </p>
+                        </section>
+
+                        <section class="student-forum-suggestion">
+                            <button type="button" class="student-forum-suggestion__btn" data-post-id="{{ post.id }}" data-csrf="{{ csrf_token('forum_post_suggest_' ~ post.id) }}" title="Get AI suggestion">💡 Suggest an answer</button>
+                        </section>
+
+                        <section class="student-forum-comments">
+                            <h4>Comments</h4>
+
+                            <form method="post" action="{{ path('app_student_forum_comment_create', {id: post.id}) }}" class="student-forum-form student-forum-form--inline">
+                                <input type="hidden" name="_token" value="{{ csrf_token('forum_comment_create_' ~ post.id) }}">
+                                <input type="text" name="content" maxlength="600" placeholder="Write a public comment" data-comment-input="{{ post.id }}" required>
+                                <button type="submit" class="student-btn">Comment</button>
+                            </form>
+
+                            <div class="student-forum-comment-list">
+                                {% if topLevelComments is empty %}
+                                    <p class="student-forum-empty">No comments yet.</p>
+                                {% else %}
+                                    {% for comment in topLevelComments %}
+                                        {% include 'dashboard/student_forum_comment.html.twig' with {
+                                            comment: comment,
+                                            post: post,
+                                            level: 0
+                                        } only %}
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                        </section>
+                    </article>
+                {% endfor %}
+            </section>
+        </section>
+    </div>
+</main>
+
+<script>
+document.querySelectorAll('.student-rating-stars').forEach((form) => {
+    const ratingInput = form.querySelector('.student-rating-stars__value');
+    form.querySelectorAll('.student-rating-stars__button').forEach((button) => {
+        button.addEventListener('click', () => {
+            ratingInput.value = button.dataset.rating;
+            form.submit();
+        });
+    });
+});
+
+// AI Suggestion System
+document.querySelectorAll('.student-forum-suggestion__btn').forEach((btn) => {
+    btn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const postId = btn.dataset.postId;
+        const csrf = btn.dataset.csrf;
+        
+        btn.disabled = true;
+        btn.textContent = '⏳ Loading...';
+        
+        try {
+            const response = await fetch('{{ path("app_student_forum_post_suggest", {id: "__ID__"}) }}'.replace('__ID__', postId), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: '_token=' + encodeURIComponent(csrf)
+            });
+            
+            const data = await response.json();
+            
+            if (data.suggestion) {
+                showSuggestionModal(data.suggestion, postId);
+            } else if (data.error) {
+                alert('Error: ' + data.error);
+            }
+        } catch (error) {
+            alert('Failed to get suggestion: ' + error.message);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = '💡 Suggest an answer';
+        }
+    });
+});
+
+function showSuggestionModal(suggestion, postId) {
+    const safeSuggestion = String(suggestion)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+
+    const modal = document.createElement('div');
+    modal.className = 'student-suggestion-modal';
+    modal.innerHTML = `
+        <div class="student-suggestion-modal__content">
+            <button type="button" class="student-suggestion-modal__close" title="Close">✕</button>
+            <h3>💡 AI Suggestion</h3>
+            <p>${safeSuggestion}</p>
+            <button type="button" class="student-btn student-btn--primary student-suggestion-modal__use-btn">Use this suggestion</button>
+            <button type="button" class="student-btn student-suggestion-modal__close-btn">Got it!</button>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    const closeBtn = modal.querySelector('.student-suggestion-modal__close');
+    const closeMainBtn = modal.querySelector('.student-suggestion-modal__close-btn');
+    const useBtn = modal.querySelector('.student-suggestion-modal__use-btn');
+    
+    closeBtn.addEventListener('click', () => modal.remove());
+    closeMainBtn.addEventListener('click', () => modal.remove());
+
+    useBtn.addEventListener('click', () => {
+        const commentInput = document.querySelector('[data-comment-input="' + postId + '"]');
+        if (!commentInput) {
+            alert('Comment input not found for this post.');
+            return;
+        }
+
+        commentInput.value = String(suggestion).trim();
+        commentInput.dispatchEvent(new Event('input', { bubbles: true }));
+        commentInput.focus();
+        commentInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        modal.remove();
+    });
+    
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.remove();
+    });
+}
+</script>
+
+<!-- Suggestion Modal Styles (injected) -->
+<style>
+.student-suggestion-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.student-suggestion-modal__content {
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    position: relative;
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.student-suggestion-modal__close {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    transition: color 0.2s;
+}
+
+.student-suggestion-modal__close:hover {
+    color: var(--text);
+}
+
+.student-suggestion-modal__content h3 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    color: var(--primary);
+    font-size: 1.2rem;
+}
+
+.student-suggestion-modal__content p {
+    margin: 0 0 1.5rem 0;
+    line-height: 1.6;
+    color: var(--text);
+}
+
+.student-suggestion-modal__close-btn {
+    width: 100%;
+}
+</style>
+
+{% endblock %}

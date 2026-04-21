@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>{% block title %}LearnWay{% endblock %}</title>
+        <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text><text y=%221.3em%22 x=%220.2em%22 font-size=%2276%22 fill=%22%23fff%22>sf</text></svg>">
+        {% block stylesheets %}
+        {% endblock %}
+
+        {% block javascripts %}
+            {% block importmap %}{{ importmap('app') }}{% endblock %}
+        {% endblock %}
+
+        {% set frankenphpHotReload = app.request.server.get('FRANKENPHP_HOT_RELOAD') %}
+        {% if frankenphpHotReload %}
+        <meta name="frankenphp-hot-reload:url" content="{{ frankenphpHotReload }}">
+        <script src="https://cdn.jsdelivr.net/npm/idiomorph"></script>
+        <script src="https://cdn.jsdelivr.net/npm/frankenphp-hot-reload/+esm" type="module"></script>
+        {% endif %}
+    </head>
+    <body>
+        {% block body %}
+        <main class="learnway-home" id="top">
+            <div class="learnway-home__shell">
+                <header class="learnway-topbar">
+                    <a class="learnway-brand" href="#top">LearnWay</a>
+                    <nav class="learnway-nav" aria-label="Main navigation">
+                        <a href="#top" class="is-active">Home</a>
+                        <a href="#success">Courses</a>
+                        <a href="#features">Career</a>
+                        <a href="#about">Blog</a>
+                        <a href="#about">About Us</a>
+                        <a href="#footer">Contact</a>
+                    </nav>
+                    <div class="learnway-actions">
+                        {% if app.user %}
+                            <div class="student-user learnway-user">
+                                {% if app.user.profileImage %}
+                                    <img class="student-user__avatar student-user__avatar-image" src="{{ asset('uploads/profile/' ~ app.user.profileImage) }}" alt="{{ app.user.firstName|default('Student') }} avatar">
+                                {% else %}
+                                    <span class="student-user__avatar">{{ app.user.firstName|default('S')|slice(0, 1)|upper }}</span>
+                                {% endif %}
+                                <span class="student-user__name">{{ (app.user.firstName ~ ' ' ~ app.user.lastName)|trim }}</span>
+                            </div>
+                        {% else %}
+                            <a class="learnway-chip learnway-chip--light" href="{{ path('app_login') }}">Login</a>
+                            <a class="learnway-chip learnway-chip--solid" href="{{ path('app_register') }}">Sign up</a>
+                        {% endif %}
+                    </div>
+                </header>
+
+                <section class="learnway-hero">
+                    <div class="learnway-hero__copy">
+                        <p class="learnway-eyebrow">by LearnWay team in inspiration</p>
+                        <h1><span>Studying</span> online is now much easier</h1>
+                        <p>
+                            LearnWay is an e-learning platform that helps students organize lessons,
+                            follow their progress, and stay connected with the school community.
+                        </p>
+                        <div class="learnway-hero__actions">
+                            <a class="learnway-btn learnway-btn--primary" href="{{ path('app_login') }}">Join for free</a>
+                            <a class="learnway-btn learnway-btn--ghost" href="#features">Watch how it works</a>
+                        </div>
+                    </div>
+                    <div class="learnway-hero__visual" aria-hidden="true">
+                        <img src="{{ asset('loading.png') }}" alt="" class="learnway-hero__image">
+                       
+                    </div>
+                </section>
+
+                <section class="learnway-panel" id="success">
+                    <div class="learnway-section-heading">
+                        <p>Our Success</p>
+                        <h2>Numbers that show how LearnWay helps students progress</h2>
+                    </div>
+                    <div class="learnway-stats">
+                        <article><strong>15K+</strong><span>Students</span></article>
+                        <article><strong>75%</strong><span>Total success</span></article>
+                        <article><strong>35</strong><span>Main questions</span></article>
+                        <article><strong>26</strong><span>Chief experts</span></article>
+                        <article><strong>16</strong><span>Years of experience</span></article>
+                    </div>
+                </section>
+
+                <section class="learnway-panel learnway-panel--soft" id="features">
+                    <div class="learnway-section-heading learnway-section-heading--compact">
+                        <p>All-in-One Cloud Software</p>
+                        <h2>One platform for learning, tracking and collaboration</h2>
+                    </div>
+                    <div class="learnway-feature-grid">
+                        <article class="learnway-feature-card">
+                            <span class="learnway-feature-card__icon">■</span>
+                            <h3>Online Billing, Invoicing & Contracts</h3>
+                            <p>Simple and secure control of learning plans, student records and content access.</p>
+                        </article>
+                        <article class="learnway-feature-card">
+                            <span class="learnway-feature-card__icon learnway-feature-card__icon--green">▣</span>
+                            <h3>Easy Scheduling & Attendance</h3>
+                            <p>Follow class schedules, attendance and progress updates in one place.</p>
+                        </article>
+                        <article class="learnway-feature-card">
+                            <span class="learnway-feature-card__icon learnway-feature-card__icon--blue">◉</span>
+                            <h3>Customer Tracking</h3>
+                            <p>Automate tracking for learning activity, feedback and engagement.</p>
+                        </article>
+                    </div>
+                </section>
+
+                <section class="learnway-panel" id="about">
+                    <div class="learnway-section-heading learnway-section-heading--compact">
+                        <p>What is LearnWay?</p>
+                        <h2>A platform where students can learn, share and stay organized</h2>
+                    </div>
+                    <div class="learnway-split-grid">
+                        <article class="learnway-tiles learnway-tiles--dark">
+                            <div>
+                                <span>FOR INSTRUCTORS</span>
+                                <h3>Start a class today</h3>
+                            </div>
+                        </article>
+                        <article class="learnway-tiles learnway-tiles--image">
+                            <div>
+                                <span>FOR STUDENTS</span>
+                                <h3>Enter class easily</h3>
+                            </div>
+                        </article>
+                    </div>
+                </section>
+
+                <footer class="learnway-footer" id="footer">
+                    <div class="learnway-footer__brand">
+                        <p>LearnWay</p>
+                        <span>Virtual class for students and teachers.</span>
+                    </div>
+
+                    <div class="learnway-footer__links">
+                        <a href="#top">Home</a>
+                        <a href="#success">Courses</a>
+                        <a href="#features">Career</a>
+                        <a href="#about">About us</a>
+                        <a href="{{ path('app_login') }}">Login</a>
+                        <a href="{{ path('app_register') }}">Sign up</a>
+                    </div>
+
+                    <small>Copyright 2026 | LearnWay | Privacy Policy | Terms & Conditions</small>
+                </footer>
+            </div>
+        </main>
+        {% endblock %}
+    </body>
+</html>

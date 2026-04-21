@@ -1,0 +1,67 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Teacher Submissions{% endblock %}
+
+{% block body %}
+<main class="student-home teacher-courses-page">
+    <div class="student-home__container">
+        <header class="student-topbar">
+            <a class="student-logo" href="{{ path('app_teacher_course_index') }}">LearnWay</a>
+            <nav class="student-nav" aria-label="Teacher navigation">
+                <a href="{{ path('app_teacher_course_index') }}">Courses</a>
+                <a href="{{ path('app_teacher_course_new') }}">Add course</a>
+                <a href="{{ path('app_teacher_submissions') }}" class="is-active">Submissions</a>
+                <a href="{{ path('app_logout') }}">Logout</a>
+            </nav>
+            <div class="student-user">
+                {% if app.user and app.user.profileImage %}
+                    <img class="student-user__avatar student-user__avatar-image" src="{{ asset('uploads/profile/' ~ app.user.profileImage) }}" alt="{{ teacher_name }} avatar">
+                {% else %}
+                    <span class="student-user__avatar">{{ teacher_name|slice(0, 1)|upper }}</span>
+                {% endif %}
+                <span class="student-user__name">{{ teacher_name }}</span>
+            </div>
+        </header>
+
+        <section class="student-profile-hero teacher-courses-hero">
+            <div>
+                <p class="student-profile-hero__kicker">Teacher submissions</p>
+                <h1>Student submissions</h1>
+                <p>All received quiz submissions appear here.</p>
+            </div>
+            <a class="student-btn" href="{{ path('app_teacher_course_index') }}">Back to courses</a>
+        </section>
+
+        <section class="student-section">
+            {% if submission_rows is empty %}
+                <article class="student-related-card">
+                    <div class="student-related-card__content">
+                        <h3>No submissions yet</h3>
+                        <p>Students have not submitted quizzes yet.</p>
+                    </div>
+                </article>
+            {% else %}
+                <div class="teacher-quiz-list">
+                    {% for row in submission_rows %}
+                        <article class="student-related-card teacher-quiz-card">
+                            <div class="student-related-card__content">
+                                <p class="student-related-card__tag">{{ row.course_title }}</p>
+                                <h3>{{ row.quiz_title }}</h3>
+                                <p>
+                                    Student: <strong>{{ row.student_name }}</strong>
+                                    ({{ row.student_email }})
+                                </p>
+                                <div class="teacher-quiz-index-meta">
+                                    <span>Submitted: {{ row.submitted_at ? row.submitted_at|date('d/m/Y H:i') : '-' }}</span>
+                                    <strong>Score: {{ row.score is not null ? row.score ~ '/20' : '-' }}</strong>
+                                </div>
+                                <p>Status: <strong>{{ row.status|default('submitted') }}</strong></p>
+                            </div>
+                        </article>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </section>
+    </div>
+</main>
+{% endblock %}

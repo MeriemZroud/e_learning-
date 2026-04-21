@@ -1,0 +1,134 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}About LearnWay{% endblock %}
+
+{% block body %}
+<main class="student-home student-about-page">
+    <div class="student-home__container">
+        <header class="student-topbar">
+            <a class="student-logo" href="{{ path('app_student_dashboard') }}">LearnWay</a>
+            <nav class="student-nav" aria-label="Main navigation">
+                <a href="{{ path('app_student_dashboard') }}">Home</a>
+                <a href="{{ path('app_student_quiz_index') }}">Course</a>
+                <a href="#">Career</a>
+                <a href="{{ path('app_student_forum_index') }}">Blog</a>
+                <a href="{{ path('app_student_profile') }}">Profile</a>
+                <a href="{{ path('app_student_about') }}" class="is-active">About us</a>
+            </nav>
+            <div class="student-user">
+                {% if app.user and app.user.profileImage %}
+                    <img class="student-user__avatar student-user__avatar-image" src="{{ asset('uploads/profile/' ~ app.user.profileImage) }}" alt="{{ student_name }} avatar">
+                {% else %}
+                    <span class="student-user__avatar">{{ student_name|slice(0, 1)|upper }}</span>
+                {% endif %}
+                <span class="student-user__name">{{ student_name }}</span>
+            </div>
+        </header>
+
+        <section class="student-hero">
+            <div class="student-hero__text">
+                <p class="student-hero__meta">About LearnWay</p>
+                <h1>Learning designed for students who want to move faster and learn better.</h1>
+                <p class="student-hero__desc">
+                    LearnWay is an e-learning platform built to help students follow structured lessons,
+                    join conversations, and track their progress in one place with a clean and friendly interface.
+                </p>
+                <div class="student-hero__actions">
+                    <a class="student-btn student-btn--primary" href="{{ path('app_student_dashboard') }}">Back to dashboard</a>
+                    <a class="student-btn" href="{{ path('app_student_forum_index') }}">Visit forum</a>
+                </div>
+            </div>
+            <div class="student-hero__visual">
+                <img
+                    src="{{ asset('about.png') }}"
+                    alt="LearnWay e-learning"
+                    class="student-hero__image"
+                    onerror="this.onerror=null;this.src='{{ asset('about.jpg') }}';"
+                >
+            </div>
+        </section>
+
+        <section class="student-section">
+            <div class="student-section__head">
+                <h2>What LearnWay offers</h2>
+            </div>
+            <div class="student-mini-grid">
+                <article class="student-mini-card">
+                    <img src="{{ asset('stucture.jpg') }}" alt="Structure" class="student-mini-card__image">
+                    <h3>Structured lessons</h3>
+                </article>
+                <article class="student-mini-card">
+                    <img src="{{ asset('prog.jpg') }}" alt="Progress" class="student-mini-card__image">
+                    <h3>Progress tracking</h3>
+                </article>
+                <article class="student-mini-card">
+                    <img src="{{ asset('forum.jpg') }}" alt="Forum" class="student-mini-card__image">
+                    <h3>Student forum</h3>
+                </article>
+                <article class="student-mini-card">
+                    <img src="{{ asset('profil.jpg') }}" alt="Profile" class="student-mini-card__image">
+                    <h3>Personal profile</h3>
+                </article>
+            </div>
+        </section>
+
+        <section class="student-section student-section--soft">
+            <div class="student-section__head">
+                <h2>Why students use LearnWay</h2>
+            </div>
+            <div class="student-related-grid">
+                <article class="student-related-card">
+                    <div class="student-related-card__image"></div>
+                    <div class="student-related-card__content">
+                        <p class="student-related-card__tag">Focused learning</p>
+                        <h3>Content stays organized by subject, so students can learn step by step.</h3>
+                        <p>Each lesson is meant to be clear, practical, and easy to revisit whenever needed.</p>
+                    </div>
+                </article>
+                <article class="student-related-card">
+                    <div class="student-related-card__image"></div>
+                    <div class="student-related-card__content">
+                        <p class="student-related-card__tag">Community support</p>
+                        <h3>Students can share ideas, ask questions, and stay connected through the forum.</h3>
+                        <p>LearnWay combines course material with discussion spaces to keep learning active.</p>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <section class="student-section">
+            <div class="student-section__head">
+                <h2>Our promise</h2>
+            </div>
+            <div class="student-workshop-grid">
+                <article class="student-workshop-card">
+                    <div class="student-workshop-card__image"></div>
+                    <h3>Simple navigation</h3>
+                    <p>Students can move between learning, profile, and discussions without friction.</p>
+                </article>
+                <article class="student-workshop-card">
+                    <div class="student-workshop-card__image"></div>
+                    <h3>Clear progress</h3>
+                    <p>We focus on helping learners see what they have completed and what comes next.</p>
+                </article>
+                <article class="student-workshop-card">
+                    <div class="student-workshop-card__image"></div>
+                    <h3>Supportive experience</h3>
+                    <p>LearnWay is designed to feel welcoming, calm, and easy to use every day.</p>
+                </article>
+                <article class="student-workshop-card">
+                    <div class="student-workshop-card__image"></div>
+                    <h3>Built for growth</h3>
+                    <p>The platform is ready for lessons, collaboration, and future student features.</p>
+                </article>
+            </div>
+        </section>
+
+        <footer class="student-footer">
+            <p class="student-footer__brand">LearnWay</p>
+            <p>Learn online. Stay connected. Grow with confidence.</p>
+            <small>About LearnWay e-learning platform</small>
+        </footer>
+    </div>
+</main>
+{% endblock %}

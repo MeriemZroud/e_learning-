@@ -1,0 +1,129 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Student Profile{% endblock %}
+
+{% block body %}
+<main class="student-home student-profile-page">
+    <div class="student-home__container">
+        <header class="student-topbar">
+            <a class="student-logo" href="{{ path('app_student_dashboard') }}">LearnWay</a>
+            <nav class="student-nav" aria-label="Main navigation">
+                <a href="{{ path('app_student_dashboard') }}">Home</a>
+                <a href="{{ path('app_student_quiz_index') }}">Course</a>
+                <a href="#">Career</a>
+                <a href="{{ path('app_student_forum_index') }}">Blog</a>
+                <a href="{{ path('app_student_profile') }}" class="is-active">Profile</a>
+                <a href="{{ path('app_student_about') }}">About us</a>
+            </nav>
+            <div class="student-user">
+                {% if user.profileImage %}
+                    <img class="student-user__avatar student-user__avatar-image" src="{{ asset('uploads/profile/' ~ user.profileImage) }}" alt="{{ user.firstName|default('Student') }} avatar">
+                {% else %}
+                    <span class="student-user__avatar">{{ user.firstName|default('S')|slice(0, 1)|upper }}</span>
+                {% endif %}
+                <span class="student-user__name">{{ user.firstName|default('Student') }} {{ user.lastName|default('') }}</span>
+            </div>
+        </header>
+
+        <section class="student-profile-hero">
+            <div>
+                <p class="student-profile-hero__kicker">Student account</p>
+                <h1>Profile settings</h1>
+                <p>Update your personal information. Leave any field empty to keep its current value.</p>
+            </div>
+            <a class="student-btn" href="{{ path('app_student_dashboard') }}">Back to dashboard</a>
+        </section>
+
+        <section class="student-profile-layout">
+            <aside class="student-profile-card student-profile-card--summary">
+                {% if user.profileImage %}
+                    <img class="student-profile-avatar student-profile-avatar-image" src="{{ asset('uploads/profile/' ~ user.profileImage) }}" alt="{{ user.firstName|default('Student') }} avatar">
+                {% else %}
+                    <div class="student-profile-avatar">{{ user.firstName|default('S')|slice(0, 1)|upper }}</div>
+                {% endif %}
+                <h2>{{ user.firstName|default('Student') }} {{ user.lastName|default('') }}</h2>
+                <p class="student-profile-note">{{ user.email }}</p>
+
+                <div class="student-profile-stats">
+                    <div>
+                        <span>Role</span>
+                        <strong>{{ user.role ? user.role.roleCategory|default('Student') : 'Student' }}</strong>
+                    </div>
+                    <div>
+                        <span>Status</span>
+                        <strong>{{ user.isActive ? 'Active' : 'Inactive' }}</strong>
+                    </div>
+                    <div>
+                        <span>Joined</span>
+                        <strong>{{ user.createdAt ? user.createdAt|date('d/m/Y') : 'N/A' }}</strong>
+                    </div>
+                    <div>
+                        <span>Last login</span>
+                        <strong>{{ user.lastLoginAt ? user.lastLoginAt|date('d/m/Y H:i') : 'N/A' }}</strong>
+                    </div>
+                </div>
+            </aside>
+
+            <article class="student-profile-card student-profile-card--form">
+                {% for label, messages in app.flashes %}
+                    {% for message in messages %}
+                        <div class="student-forum-alert {% if label == 'error' %}student-forum-alert--error{% endif %}">{{ message }}</div>
+                    {% endfor %}
+                {% endfor %}
+
+                <h2>Edit your information</h2>
+                <form method="post" enctype="multipart/form-data" class="student-profile-form">
+                    <input type="hidden" name="_token" value="{{ csrf_token('student_profile_update') }}">
+
+                    <div class="student-profile-grid">
+                        <div>
+                            <label for="profile_first_name">First name</label>
+                            <input id="profile_first_name" type="text" name="first_name" value="{{ user.firstName }}" maxlength="120" placeholder="Your first name">
+                        </div>
+
+                        <div>
+                            <label for="profile_last_name">Last name</label>
+                            <input id="profile_last_name" type="text" name="last_name" value="{{ user.lastName }}" maxlength="120" placeholder="Your last name">
+                        </div>
+
+                        <div>
+                            <label for="profile_phone">Phone</label>
+                            <input id="profile_phone" type="text" name="phone" value="{{ user.phone|default('') }}" maxlength="30" placeholder="Optional phone number">
+                        </div>
+
+                        <div>
+                            <label for="profile_date_of_birth">Date of birth</label>
+                            <input id="profile_date_of_birth" type="date" name="date_of_birth" value="{{ user.dateOfBirth ? user.dateOfBirth|date('Y-m-d') : '' }}">
+                        </div>
+
+                        <div>
+                            <label for="profile_gender">Gender</label>
+                            <input id="profile_gender" type="text" name="gender" value="{{ user.gender|default('') }}" maxlength="40" placeholder="Optional gender">
+                        </div>
+
+                        <div>
+                            <label for="profile_image">Profile image</label>
+                            <input id="profile_image" type="file" name="profile_image" accept="image/jpeg,image/png,image/webp,image/gif">
+                            <small class="student-profile-upload-hint">Accepted: JPG, PNG, WEBP, GIF (max 2 MB).</small>
+                        </div>
+                    </div>
+
+                    <div class="student-profile-form__hint">
+                        Email is shown below as your login identifier. Keep fields empty if you do not want to change them.
+                    </div>
+
+                    <div class="student-profile-form__actions">
+                        <a class="student-btn" href="{{ path('app_student_forum_index') }}">Go to forum</a>
+                        <button type="submit" class="student-btn student-btn--primary">Save changes</button>
+                    </div>
+                </form>
+
+                <div class="student-profile-email">
+                    <span>Login email</span>
+                    <strong>{{ user.email }}</strong>
+                </div>
+            </article>
+        </section>
+    </div>
+</main>
+{% endblock %}

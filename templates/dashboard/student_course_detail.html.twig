@@ -1,0 +1,114 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Course Detail{% endblock %}
+
+{% block body %}
+<main class="student-home student-forum-page">
+    <div class="student-home__container">
+        <header class="student-topbar">
+            <a class="student-logo" href="{{ path('app_student_dashboard') }}">LearnWay</a>
+            <nav class="student-nav" aria-label="Main navigation">
+                <a href="{{ path('app_student_dashboard') }}">Home</a>
+                <a href="{{ path('app_student_quiz_index') }}" class="is-active">Course</a>
+                <a href="#">Career</a>
+                <a href="{{ path('app_student_forum_index') }}">Blog</a>
+                <a href="{{ path('app_student_profile') }}">Profile</a>
+                <a href="{{ path('app_student_about') }}">About us</a>
+            </nav>
+            <div class="student-user">
+                {% if app.user and app.user.profileImage %}
+                    <img class="student-user__avatar student-user__avatar-image" src="{{ asset('uploads/profile/' ~ app.user.profileImage) }}" alt="{{ student_name }} avatar">
+                {% else %}
+                    <span class="student-user__avatar">{{ student_name|slice(0, 1)|upper }}</span>
+                {% endif %}
+                <span class="student-user__name">{{ student_name }}</span>
+            </div>
+        </header>
+
+        {% set videoUrl = course.videoUrl %}
+        {% if 'youtube.com/watch?v=' in course.videoUrl %}
+            {% set videoUrl = course.videoUrl|replace({'watch?v=': 'embed/'}) %}
+        {% elseif 'youtu.be/' in course.videoUrl %}
+            {% set videoCode = (course.videoUrl|split('youtu.be/')|last)|split('?')|first %}
+            {% set videoUrl = 'https://www.youtube.com/embed/' ~ videoCode %}
+        {% endif %}
+
+        <section class="student-forum-hero">
+            <div>
+                <p class="student-forum-hero__kicker">Course detail</p>
+                <h1>{{ course.title }}</h1>
+                <p>{{ course.description|default('No description provided yet.') }}</p>
+            </div>
+            <a class="student-btn" href="{{ path('app_student_quiz_index') }}">Back to course list</a>
+        </section>
+
+        <section class="student-section student-section--soft">
+            <div class="student-live-course">
+                <article class="student-live-course__video">
+                    {% if 'youtube.com/embed/' in videoUrl %}
+                        <iframe
+                            src="{{ videoUrl }}"
+                            title="{{ course.title }}"
+                            loading="lazy"
+                            allowfullscreen>
+                        </iframe>
+                    {% else %}
+                        <video controls preload="metadata" src="{{ videoUrl }}"></video>
+                    {% endif %}
+                </article>
+
+                <article class="student-live-course__info">
+                    <p class="student-related-card__tag">Learning resources</p>
+                    <h3>{{ course.title }}</h3>
+                    <p>{{ course.description|default('No description available.') }}</p>
+                    <div class="student-live-course__links">
+                        <a class="student-btn student-btn--primary" href="{{ course.videoUrl }}" target="_blank" rel="noopener">Open video</a>
+                        {% if course.pdfFile %}
+                            <a class="student-btn" href="{{ asset('uploads/courses/pdf/' ~ course.pdfFile) }}" target="_blank" rel="noopener">Open PDF</a>
+                        {% endif %}
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <section class="student-section">
+            <div class="student-section__head">
+                <h2>Course quizzes</h2>
+            </div>
+
+            {% if quizzes is empty %}
+                <article class="student-related-card">
+                    <div class="student-related-card__content">
+                        <h3>No quiz published yet</h3>
+                        <p>Your teacher has not published quizzes for this course.</p>
+                    </div>
+                </article>
+            {% else %}
+                <div class="teacher-quiz-list">
+                    {% for quiz in quizzes %}
+                        {% set submission = submission_map[quiz.id] ?? null %}
+                        <article class="student-related-card teacher-quiz-card">
+                            <div class="student-related-card__content">
+                                <p class="student-related-card__tag">Quiz</p>
+                                <h3>{{ quiz.title }}</h3>
+                                <p>{{ quiz.sourceSummary|default('Quiz generated from course resources.') }}</p>
+                                <div class="teacher-quiz-card__footer">
+                                    <div class="teacher-quiz-index-meta">
+                                        <span>Published: {{ quiz.createdAt ? quiz.createdAt|date('d/m/Y') : '-' }}</span>
+                                        {% if submission and submission.score is not null %}
+                                            <strong>Score: {{ submission.score }}/20</strong>
+                                        {% endif %}
+                                    </div>
+                                    <a class="student-btn student-btn--primary" href="{{ path('app_student_quiz_take', {id: quiz.id}) }}">
+                                        {% if submission %}Retake{% else %}Start quiz{% endif %}
+                                    </a>
+                                </div>
+                            </div>
+                        </article>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </section>
+    </div>
+</main>
+{% endblock %}

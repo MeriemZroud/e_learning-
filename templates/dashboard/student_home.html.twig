@@ -1,0 +1,167 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Student Home{% endblock %}
+
+{% block body %}
+<main class="student-home">
+    <div class="student-home__container">
+        <header class="student-topbar">
+            <a class="student-logo" href="{{ path('app_student_dashboard') }}">LearnWay</a>
+            <nav class="student-nav" aria-label="Main navigation">
+                <a href="{{ path('app_student_dashboard') }}" class="is-active">Home</a>
+                <a href="{{ path('app_student_quiz_index') }}">Course</a>
+                <a href="#">Career</a>
+                <a href="{{ path('app_student_forum_index') }}">Blog</a>
+                <a href="{{ path('app_student_profile') }}">Profile</a>
+                <a href="{{ path('app_student_about') }}">About us</a>
+            </nav>
+            <div class="student-user">
+                {% if app.user and app.user.profileImage %}
+                    <img class="student-user__avatar student-user__avatar-image" src="{{ asset('uploads/profile/' ~ app.user.profileImage) }}" alt="{{ student_name }} avatar">
+                {% else %}
+                    <span class="student-user__avatar">{{ student_name|slice(0, 1)|upper }}</span>
+                {% endif %}
+                <span class="student-user__name">{{ student_name }}</span>
+            </div>
+        </header>
+
+        <section class="student-hero">
+            <div class="student-hero__text">
+                <p class="student-hero__meta">by LearnWay team in <span>inspiration</span></p>
+                <h1>LearnWay</h1>
+                <p class="student-hero__desc">
+                    Learn practical design and development principles with curated lessons,
+                    smart progress tracking, and activity spaces designed for every student.
+                </p>
+                <div class="student-hero__actions">
+                    <a class="student-btn student-btn--primary" href="{{ path('app_student_forum_index') }}">Start learning</a>
+                    <a class="student-btn" href="{{ path('app_logout') }}">Logout</a>
+                </div>
+            </div>
+            <div class="student-hero__visual" aria-hidden="true">
+                <img src="{{ asset('image.png') }}" alt="" class="student-hero__image">
+            </div>
+        </section>
+
+        {% if featured_course %}
+            {% set videoUrl = featured_course.videoUrl %}
+            {% if 'youtube.com/watch?v=' in featured_course.videoUrl %}
+                {% set videoUrl = featured_course.videoUrl|replace({'watch?v=': 'embed/'}) %}
+            {% elseif 'youtu.be/' in featured_course.videoUrl %}
+                {% set videoCode = (featured_course.videoUrl|split('youtu.be/')|last)|split('?')|first %}
+                {% set videoUrl = 'https://www.youtube.com/embed/' ~ videoCode %}
+            {% endif %}
+
+            <section class="student-section student-section--soft">
+                <div class="student-section__head">
+                    <h2>Live course</h2>
+                    <a href="{{ path('app_student_quiz_index') }}">View quizzes</a>
+                </div>
+                <div class="student-live-course">
+                    <article class="student-live-course__video">
+                        {% if 'youtube.com/embed/' in videoUrl %}
+                            <iframe
+                                src="{{ videoUrl }}"
+                                title="{{ featured_course.title }}"
+                                loading="lazy"
+                                allowfullscreen>
+                            </iframe>
+                        {% else %}
+                            <video controls preload="metadata" src="{{ videoUrl }}"></video>
+                        {% endif %}
+                    </article>
+                    <article class="student-live-course__info">
+                        <p class="student-related-card__tag">{{ featured_course.isPublished ? 'Published course' : 'Draft' }}</p>
+                        <h3>{{ featured_course.title }}</h3>
+                        <p>{{ featured_course.description|default('No description provided yet.') }}</p>
+                        <div class="student-live-course__links">
+                            <a class="student-btn student-btn--primary" href="{{ featured_course.videoUrl }}" target="_blank" rel="noopener">Open video</a>
+                            {% if featured_course.pdfFile %}
+                                <a class="student-btn" href="{{ asset('uploads/courses/pdf/' ~ featured_course.pdfFile) }}" target="_blank" rel="noopener">Open PDF</a>
+                            {% endif %}
+                        </div>
+                    </article>
+                </div>
+            </section>
+        {% endif %}
+
+        <section class="student-section">
+            <div class="student-section__head">
+                <h2>Reading blog list</h2>
+            </div>
+            <div class="student-mini-grid">
+                {% for item in ['UI/UX', 'React', 'PHP', 'JavaScript'] %}
+                    <article class="student-mini-card">
+                        <div class="student-mini-card__thumb"></div>
+                        <h3>{{ item }}</h3>
+                    </article>
+                {% endfor %}
+            </div>
+        </section>
+
+        <section class="student-section student-section--soft">
+            <div class="student-section__head">
+                <h2>Related blog</h2>
+                <a href="#">See all</a>
+            </div>
+            <div class="student-related-grid">
+                {% for i in 1..2 %}
+                    <article class="student-related-card">
+                        <div class="student-related-card__image"></div>
+                        <div class="student-related-card__content">
+                            <p class="student-related-card__tag">UX Design</p>
+                            <h3>Class adds 500 million to its balance sheet for a growth-ready school solution</h3>
+                            <p>
+                                Class is focused on helping every student stay connected to collaborative,
+                                research-backed lessons.
+                            </p>
+                            <div class="student-related-card__meta">
+                                <span>Meriem Zroud</span>
+                                <span>9 min</span>
+                            </div>
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+        </section>
+
+        <section class="student-section">
+            <div class="student-section__head">
+                <h2>Marketing articles</h2>
+                <a href="#">See all</a>
+            </div>
+            <div class="student-workshop-grid">
+                {% for item in [
+                    'AWS Certified solutions architect',
+                    'AWS Certified solutions architect',
+                    'AWS Certified solutions architect',
+                    'AWS Certified solutions architect'
+                ] %}
+                    <article class="student-workshop-card">
+                        <div class="student-workshop-card__image"></div>
+                        <h3>{{ item }}</h3>
+                        <p>Build confidence with project-based material, quizzes, and guided practice sessions.</p>
+                        <div class="student-workshop-card__meta">
+                            <span>by Lina</span>
+                            <span>$80</span>
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+        </section>
+
+        <footer class="student-footer">
+            <p class="student-footer__brand">LearnWay</p>
+            <p>Virtual class for zoom</p>
+            <form class="student-newsletter" action="#" method="post">
+                <label for="newsletter_email">Subscribe to get our newsletter</label>
+                <div>
+                    <input id="newsletter_email" type="email" placeholder="Your Email" />
+                    <button type="submit">Subscribe</button>
+                </div>
+            </form>
+            <small>Copyright 2026 | Privacy Policy | Terms & Conditions</small>
+        </footer>
+    </div>
+</main>
+{% endblock %}

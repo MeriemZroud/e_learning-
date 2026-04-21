@@ -1,0 +1,124 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}AI Quiz - {{ course.title }}{% endblock %}
+
+{% block body %}
+<main class="student-home teacher-courses-page">
+    <div class="student-home__container">
+        <header class="student-topbar">
+            <a class="student-logo" href="{{ path('app_teacher_course_index') }}">LearnWay</a>
+            <nav class="student-nav" aria-label="Teacher navigation">
+                <a href="{{ path('app_teacher_course_index') }}">Courses</a>
+                <a href="{{ path('app_teacher_course_new') }}">Add course</a>
+                <a href="{{ path('app_teacher_submissions') }}">Submissions</a>
+                <a href="{{ path('app_logout') }}">Logout</a>
+            </nav>
+            <div class="student-user">
+                {% if app.user and app.user.profileImage %}
+                    <img class="student-user__avatar student-user__avatar-image" src="{{ asset('uploads/profile/' ~ app.user.profileImage) }}" alt="{{ teacher_name }} avatar">
+                {% else %}
+                    <span class="student-user__avatar">{{ teacher_name|slice(0, 1)|upper }}</span>
+                {% endif %}
+                <span class="student-user__name">{{ teacher_name }}</span>
+            </div>
+        </header>
+
+        <section class="student-profile-hero teacher-courses-hero">
+            <div>
+                <p class="student-profile-hero__kicker">AI quiz generator</p>
+                <h1>{{ course.title }}</h1>
+                <p>Generate an assignment quiz from this course resources (video and optional PDF).</p>
+            </div>
+            <div class="teacher-quiz-hero-actions">
+                <a class="student-btn" href="{{ path('app_teacher_course_index') }}">Back to courses</a>
+                <form method="post" action="{{ path('app_teacher_course_quiz_generate', {id: course.id}) }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('teacher_quiz_generate_' ~ course.id) }}">
+                    <button type="submit" class="student-btn student-btn--primary">Generate with AI</button>
+                </form>
+            </div>
+        </section>
+
+        <section class="student-section">
+            {% for label, messages in app.flashes %}
+                {% for message in messages %}
+                    <div class="student-forum-alert {% if label == 'error' %}student-forum-alert--error{% endif %}">{{ message }}</div>
+                {% endfor %}
+            {% endfor %}
+
+            {% if quiz and questions is not empty %}
+                <article class="student-related-card">
+                    <div class="student-related-card__content">
+                        <p class="student-related-card__tag">Published assignment</p>
+                        <h3>{{ quiz.title }}</h3>
+                        <p>{{ quiz.sourceSummary|default('Generated from course resources.') }}</p>
+                    </div>
+                </article>
+
+                <div class="teacher-quiz-list">
+                    {% for question in questions %}
+                        <article class="student-related-card">
+                            <div class="student-related-card__content">
+                                <p class="student-related-card__tag">Question {{ loop.index }}</p>
+                                <h3>{{ question.question }}</h3>
+                                <ul class="teacher-quiz-options">
+                                    {% for option in question.options %}
+                                        <li class="{% if loop.index0 == question.correctOption %}is-correct{% endif %}">
+                                            {{ option }}
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                                {% if question.explanation is not empty %}
+                                    <p><strong>Explanation:</strong> {{ question.explanation }}</p>
+                                {% endif %}
+                            </div>
+                        </article>
+                    {% endfor %}
+                </div>
+
+                <section class="student-section student-section--soft" style="margin-top: 1rem; padding: 1rem; border-radius: 14px;">
+                    <div class="student-section__head">
+                        <h2>Student submissions</h2>
+                    </div>
+
+                    {% if submission_rows is empty %}
+                        <article class="student-related-card">
+                            <div class="student-related-card__content">
+                                <h3>No submissions yet</h3>
+                                <p>Students have not submitted this quiz yet.</p>
+                            </div>
+                        </article>
+                    {% else %}
+                        <div class="teacher-quiz-list">
+                            {% for row in submission_rows %}
+                                <article class="student-related-card">
+                                    <div class="student-related-card__content">
+                                        <p class="student-related-card__tag">{{ row.student_name }}</p>
+                                        <h3>{{ row.student_email }}</h3>
+                                        <p>
+                                            Score:
+                                            <strong>{% if row.score is not null %}{{ row.score }}/20{% else %}-{% endif %}</strong>
+                                            · Submitted:
+                                            <strong>{% if row.submitted_at %}{{ row.submitted_at|date('d/m/Y H:i') }}{% else %}-{% endif %}</strong>
+                                        </p>
+                                        <p>Status: <strong>{{ row.status|default('submitted') }}</strong></p>
+                                        {% if row.answers is not empty %}
+                                            <p>Answers: {{ row.answers|join(', ') }}</p>
+                                        {% endif %}
+                                    </div>
+                                </article>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </section>
+            {% else %}
+                <article class="student-related-card">
+                    <div class="student-related-card__content">
+                        <h3>No quiz generated yet</h3>
+                        <p>Click "Generate with AI" to create and publish a quiz for students.</p>
+                    </div>
+                </article>
+            {% endif %}
+        </section>
+    </div>
+</main>
+{% endblock %}
