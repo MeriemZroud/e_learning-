@@ -2508,3 +2508,156 @@ a {
     opacity: 0.7;
     cursor: not-allowed;
 }
+
+.student-course-chatbot {
+    position: fixed;
+    right: 1.25rem;
+    bottom: 1.25rem;
+    z-index: 45;
+}
+
+.student-course-chatbot__toggle {
+    width: 58px;
+    height: 58px;
+    border: 0;
+    border-radius: 999px;
+    cursor: pointer;
+    background: linear-gradient(135deg, #44b6ba, #2f9297);
+    color: #fff;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    box-shadow: 0 12px 24px rgba(18, 88, 92, 0.35);
+    transition: transform 0.18s ease, box-shadow 0.2s ease;
+}
+
+.student-course-chatbot__toggle:hover,
+.student-course-chatbot__toggle:focus-visible {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 16px 28px rgba(18, 88, 92, 0.4);
+    outline: none;
+}
+
+.student-course-chatbot__panel {
+    position: absolute;
+    right: 0;
+    bottom: 72px;
+    width: min(380px, calc(100vw - 2rem));
+    border: 1px solid rgba(191, 230, 229, 0.9);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 18px 30px rgba(16, 87, 89, 0.23);
+    overflow: hidden;
+}
+
+.student-course-chatbot__head {
+    padding: 0.72rem 0.82rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(180deg, rgba(141, 216, 215, 0.28), rgba(141, 216, 215, 0.14));
+    border-bottom: 1px solid rgba(191, 230, 229, 0.9);
+}
+
+.student-course-chatbot__head h3 {
+    margin: 0;
+    font-size: 0.95rem;
+    color: var(--text);
+}
+
+.student-course-chatbot__close {
+    width: 32px;
+    height: 32px;
+    border: 0;
+    border-radius: 999px;
+    background: rgba(77, 187, 192, 0.15);
+    color: var(--primary-dark);
+    font-size: 1.1rem;
+    cursor: pointer;
+}
+
+.student-course-chatbot__messages {
+    max-height: 300px;
+    overflow-y: auto;
+    display: grid;
+    gap: 0.5rem;
+    padding: 0.7rem;
+    background: rgba(250, 254, 254, 0.9);
+}
+
+.student-course-chatbot__message {
+    max-width: 90%;
+    border-radius: 12px;
+    padding: 0.56rem 0.62rem;
+    font-size: 0.9rem;
+    line-height: 1.45;
+    color: var(--text);
+}
+
+.student-course-chatbot__message--assistant {
+    justify-self: start;
+    background: rgba(77, 187, 192, 0.15);
+    border: 1px solid rgba(77, 187, 192, 0.35);
+}
+
+.student-course-chatbot__message--user {
+    justify-self: end;
+    background: #fff;
+    border: 1px solid rgba(191, 230, 229, 1);
+}
+
+.student-course-chatbot__form {
+    display: grid;
+    gap: 0.5rem;
+    padding: 0.7rem;
+    border-top: 1px solid rgba(191, 230, 229, 0.9);
+    background: #fff;
+}
+
+.student-course-chatbot__form textarea {
+    width: 100%;
+    border: 1.5px solid var(--line);
+    border-radius: 12px;
+    padding: 0.62rem 0.72rem;
+    resize: vertical;
+    min-height: 66px;
+    max-height: 140px;
+    font-size: 0.92rem;
+    font-family: inherit;
+    color: var(--text);
+    outline: none;
+}
+
+.student-course-chatbot__form textarea:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px rgba(77, 187, 192, 0.12);
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+@media (max-width: 720px) {
+    .student-course-chatbot {
+        right: 0.75rem;
+        bottom: 0.75rem;
+    }
+
+    .student-course-chatbot__toggle {
+        width: 54px;
+        height: 54px;
+    }
+
+    .student-course-chatbot__panel {
+        bottom: 66px;
+        width: min(360px, calc(100vw - 1.5rem));
+    }
+}

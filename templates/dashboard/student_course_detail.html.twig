@@ -3,6 +3,7 @@
 {% block title %}Course Detail{% endblock %}
 
 {% block body %}
+{% set chatbotToken = csrf_token('student_course_chatbot_' ~ course.id) %}
 <main class="student-home student-forum-page">
     <div class="student-home__container">
         <header class="student-topbar">
@@ -109,6 +110,153 @@
                 </div>
             {% endif %}
         </section>
+
+        <div
+            class="student-course-chatbot"
+            data-course-chatbot
+            data-chat-endpoint="{{ path('app_student_course_chatbot', {id: course.id}) }}"
+            data-chat-token="{{ chatbotToken }}"
+        >
+            <button class="student-course-chatbot__toggle" type="button" aria-label="Open course assistant" aria-expanded="false">
+                <span>AI</span>
+            </button>
+
+            <section class="student-course-chatbot__panel" hidden>
+                <header class="student-course-chatbot__head">
+                    <h3>Course Assistant</h3>
+                    <button class="student-course-chatbot__close" type="button" aria-label="Close assistant">×</button>
+                </header>
+
+                <div class="student-course-chatbot__messages" aria-live="polite">
+                    <article class="student-course-chatbot__message student-course-chatbot__message--assistant">
+                        Hi! I can help you understand this course and prepare for quizzes.
+                    </article>
+                </div>
+
+                <form class="student-course-chatbot__form">
+                    <label class="sr-only" for="student-course-chatbot-input">Your message</label>
+                    <textarea id="student-course-chatbot-input" name="message" rows="2" placeholder="Ask your question..." required></textarea>
+                    <button type="submit" class="student-btn student-btn--primary">Send</button>
+                </form>
+            </section>
+        </div>
     </div>
 </main>
+
+<script>
+(() => {
+    const root = document.querySelector('[data-course-chatbot]');
+    if (!root) {
+        return;
+    }
+
+    const endpoint = root.dataset.chatEndpoint;
+    const token = root.dataset.chatToken;
+    const toggleButton = root.querySelector('.student-course-chatbot__toggle');
+    const closeButton = root.querySelector('.student-course-chatbot__close');
+    const panel = root.querySelector('.student-course-chatbot__panel');
+    const form = root.querySelector('.student-course-chatbot__form');
+    const textarea = form?.querySelector('textarea[name="message"]');
+    const messages = root.querySelector('.student-course-chatbot__messages');
+
+    if (!endpoint || !token || !toggleButton || !closeButton || !panel || !form || !textarea || !messages) {
+        return;
+    }
+
+    const history = [];
+
+    const appendMessage = (text, role) => {
+        const messageNode = document.createElement('article');
+        messageNode.className = `student-course-chatbot__message student-course-chatbot__message--${role}`;
+        messageNode.textContent = text;
+        messages.appendChild(messageNode);
+        messages.scrollTop = messages.scrollHeight;
+    };
+
+    const setPanelOpen = (open) => {
+        panel.hidden = !open;
+        toggleButton.setAttribute('aria-expanded', open ? 'true' : 'false');
+        root.classList.toggle('is-open', open);
+        if (open) {
+            textarea.focus();
+        }
+    };
+
+    toggleButton.addEventListener('click', () => {
+        setPanelOpen(panel.hidden);
+    });
+
+    closeButton.addEventListener('click', () => {
+        setPanelOpen(false);
+    });
+
+    form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        const text = textarea.value.trim();
+        if (!text) {
+            return;
+        }
+
+        appendMessage(text, 'user');
+        history.push({ role: 'user', content: text });
+        textarea.value = '';
+        textarea.disabled = true;
+
+        const submitButton = form.querySelector('button[type="submit"]');
+        if (submitButton) {
+            submitButton.disabled = true;
+        }
+
+        try {
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': token,
+                },
+                body: JSON.stringify({
+                    message: text,
+                    history,
+                }),
+            });
+
+            let data = null;
+            try {
+                data = await response.json();
+            } catch (parseError) {
+                data = null;
+            }
+
+            if (!response.ok) {
+                const apiError = typeof data?.error === 'string' && data.error.trim() !== ''
+                    ? data.error.trim()
+                    : 'I could not generate an answer right now. Please try again.';
+
+                appendMessage(apiError, 'assistant');
+                history.push({ role: 'assistant', content: apiError });
+                return;
+            }
+
+            const answer = typeof data?.answer === 'string' && data.answer.trim() !== ''
+                ? data.answer.trim()
+                : (typeof data?.error === 'string' && data.error.trim() !== ''
+                    ? data.error.trim()
+                    : 'I could not generate an answer right now. Please try again.');
+
+            appendMessage(answer, 'assistant');
+            history.push({ role: 'assistant', content: answer });
+        } catch (error) {
+            appendMessage('Unable to reach the assistant right now. Please try again in a moment.', 'assistant');
+        } finally {
+            textarea.disabled = false;
+            textarea.focus();
+
+            if (submitButton) {
+                submitButton.disabled = false;
+            }
+        }
+    });
+})();
+</script>
 {% endblock %}
