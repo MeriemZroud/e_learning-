@@ -7,12 +7,14 @@ use Doctrine\ORM\Mapping as ORM;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use App\Repository\UserRepository;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: 'users')]
+#[UniqueEntity(fields: ['email'], message: 'This email is already used by another account.')]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
@@ -29,6 +31,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(type: 'string')]
     private ?string $password_hash = null;
+
+    private ?string $plainPassword = null;
 
     #[ORM\Column(type: 'string')]
     private ?string $first_name = null;
@@ -182,6 +186,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
+    public function getPlainPassword(): ?string
+    {
+        return $this->plainPassword;
+    }
+
+    public function setPlainPassword(?string $plainPassword): static
+    {
+        $this->plainPassword = $plainPassword;
+
+        return $this;
+    }
+
     public function getFirstName(): ?string
     {
         return $this->first_name;
@@ -295,6 +311,13 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->created_at;
     }
 
+    public function getCreatedAtString(): string
+    {
+        return $this->created_at instanceof \DateTimeInterface
+            ? $this->created_at->format('Y-m-d H:i:s')
+            : '';
+    }
+
     public function setCreatedAt(?\DateTime $created_at): static
     {
         $this->created_at = $created_at;
@@ -350,6 +373,20 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
+    public function getRoleLabel(): string
+    {
+        if (!$this->role instanceof Role) {
+            return 'No role';
+        }
+
+        $name = trim((string) $this->role->getName());
+        if ($name !== '') {
+            return $name;
+        }
+
+        return (string) ($this->role->getRoleCategory() ?? 'No role');
+    }
+
     public function getRoles(): array
     {
         if (!$this->role instanceof Role) {
@@ -385,7 +422,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function eraseCredentials(): void
     {
-        // If you store any temporary, sensitive data on the user, clear it here
+        $this->plainPassword = null;
     }
 
     /**

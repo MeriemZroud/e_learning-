@@ -1,0 +1,13 @@
+<h2>LearnWay account updated</h2>
+
+<p>Hello {{ user.firstName }} {{ user.lastName }},</p>
+<p>Your account has been updated by an administrator.</p>
+
+<p><strong>Changes:</strong></p>
+<ul>
+    {% for change in changes %}
+        <li><strong>{{ change.field }}:</strong> {{ change.old }} -> {{ change.new }}</li>
+    {% endfor %}
+</ul>
+
+<p>If this was not expected, please contact support.</p>

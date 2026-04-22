@@ -1,0 +1,74 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Admin Profile{% endblock %}
+
+{% block body %}
+<main class="admin-profile-page">
+    <section class="admin-profile-shell">
+        <header class="admin-profile-header">
+            <div>
+                <p class="admin-profile-kicker">Admin account</p>
+                <h1>Profile settings</h1>
+                <p>You can change only the fields you want. Empty fields are ignored.</p>
+            </div>
+            <a class="admin-profile-back" href="{{ path('app_admin_dashboard') }}">Back to admin</a>
+        </header>
+
+        <div class="admin-profile-layout">
+            <aside class="admin-profile-card admin-profile-card--summary">
+                {% if user.profileImage %}
+                    <img class="admin-profile-avatar admin-profile-avatar-image" src="{{ asset('uploads/profile/' ~ user.profileImage) }}" alt="{{ user.firstName|default('Admin') }} avatar">
+                {% else %}
+                    <div class="admin-profile-avatar">{{ user.firstName|default('A')|slice(0, 1)|upper }}</div>
+                {% endif %}
+
+                <h2>{{ user.firstName|default('Admin') }} {{ user.lastName|default('') }}</h2>
+                <p>{{ user.email }}</p>
+            </aside>
+
+            <article class="admin-profile-card admin-profile-card--form">
+                {% for label, messages in app.flashes %}
+                    {% for message in messages %}
+                        <div class="admin-profile-alert {% if label == 'error' %}admin-profile-alert--error{% endif %}">{{ message }}</div>
+                    {% endfor %}
+                {% endfor %}
+
+                <form method="post" enctype="multipart/form-data" class="admin-profile-form">
+                    <input type="hidden" name="_token" value="{{ csrf_token('admin_profile_update') }}">
+
+                    <div class="admin-profile-grid">
+                        <div>
+                            <label for="first_name">First name</label>
+                            <input id="first_name" type="text" name="first_name" value="" placeholder="{{ user.firstName|default('') }}">
+                        </div>
+                        <div>
+                            <label for="last_name">Last name</label>
+                            <input id="last_name" type="text" name="last_name" value="" placeholder="{{ user.lastName|default('') }}">
+                        </div>
+                        <div>
+                            <label for="phone">Phone</label>
+                            <input id="phone" type="text" name="phone" value="" placeholder="{{ user.phone|default('') }}">
+                        </div>
+                        <div>
+                            <label for="date_of_birth">Date of birth</label>
+                            <input id="date_of_birth" type="date" name="date_of_birth" value="">
+                        </div>
+                        <div>
+                            <label for="gender">Gender</label>
+                            <input id="gender" type="text" name="gender" value="" placeholder="{{ user.gender|default('') }}">
+                        </div>
+                        <div>
+                            <label for="profile_image">Profile image</label>
+                            <input id="profile_image" type="file" name="profile_image" accept="image/jpeg,image/png,image/webp,image/gif">
+                        </div>
+                    </div>
+
+                    <div class="admin-profile-actions">
+                        <button type="submit" class="admin-profile-submit">Save changes</button>
+                    </div>
+                </form>
+            </article>
+        </div>
+    </section>
+</main>
+{% endblock %}
