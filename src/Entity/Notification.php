@@ -2,51 +2,44 @@
 
 namespace App\Entity;
 
+use App\Repository\NotificationRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
-
-use App\Repository\NotificationRepository;
 
 #[ORM\Entity(repositoryClass: NotificationRepository::class)]
-#[ORM\Table(name: 'notifications')]
+#[ORM\Table(name: 'notification')]
 class Notification
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
-    #[ORM\Column(type: 'integer')]
-    private ?int $id = null;
+    #[ORM\Column(type: Types::BIGINT)]
+    private ?string $id = null;
 
-    public function getId(): ?int
+    #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'notifications')]
+    #[ORM\JoinColumn(name: 'user_id', referencedColumnName: 'id', nullable: false, onDelete: 'CASCADE')]
+    private ?User $user = null;
+
+    #[ORM\Column(type: Types::TEXT)]
+    private ?string $message = null;
+
+    #[ORM\Column(type: 'string', length: 50, options: ['default' => 'info'])]
+    private string $type = 'info';
+
+    #[ORM\Column(type: 'boolean', options: ['default' => false])]
+    private bool $is_read = false;
+
+    #[ORM\Column(type: 'datetime_immutable')]
+    private ?\DateTimeImmutable $created_at = null;
+
+    public function __construct()
+    {
+        $this->created_at = new \DateTimeImmutable();
+    }
+
+    public function getId(): ?string
     {
         return $this->id;
     }
-
-    public function setId(int $id): self
-    {
-        $this->id = $id;
-        return $this;
-    }
-
-    #[ORM\ManyToOne(targetEntity: Classe::class, inversedBy: 'notifications')]
-    #[ORM\JoinColumn(name: 'class_id', referencedColumnName: 'id')]
-    private ?Classe $classe = null;
-
-    public function getClasse(): ?Classe
-    {
-        return $this->classe;
-    }
-
-    public function setClasse(?Classe $classe): self
-    {
-        $this->classe = $classe;
-        return $this;
-    }
-
-    #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'notifications')]
-    #[ORM\JoinColumn(name: 'created_by', referencedColumnName: 'id')]
-    private ?User $user = null;
 
     public function getUser(): ?User
     {
@@ -56,25 +49,9 @@ class Notification
     public function setUser(?User $user): self
     {
         $this->user = $user;
+
         return $this;
     }
-
-    #[ORM\Column(type: 'string', nullable: false)]
-    private ?string $title = null;
-
-    public function getTitle(): ?string
-    {
-        return $this->title;
-    }
-
-    public function setTitle(string $title): self
-    {
-        $this->title = $title;
-        return $this;
-    }
-
-    #[ORM\Column(type: 'text', nullable: false)]
-    private ?string $message = null;
 
     public function getMessage(): ?string
     {
@@ -84,13 +61,11 @@ class Notification
     public function setMessage(string $message): self
     {
         $this->message = $message;
+
         return $this;
     }
 
-    #[ORM\Column(type: 'string', nullable: false)]
-    private ?string $type = null;
-
-    public function getType(): ?string
+    public function getType(): string
     {
         return $this->type;
     }
@@ -98,59 +73,48 @@ class Notification
     public function setType(string $type): self
     {
         $this->type = $type;
+
         return $this;
     }
 
-    #[ORM\Column(type: 'boolean', nullable: false)]
-    private ?bool $is_read = null;
-
-    public function is_read(): ?bool
+    public function isRead(): bool
     {
         return $this->is_read;
     }
 
-    public function setIs_read(bool $is_read): self
-    {
-        $this->is_read = $is_read;
-        return $this;
-    }
-
-    #[ORM\Column(type: 'datetime', nullable: false)]
-    private ?\DateTimeInterface $created_at = null;
-
-    public function getCreated_at(): ?\DateTimeInterface
-    {
-        return $this->created_at;
-    }
-
-    public function setCreated_at(\DateTimeInterface $created_at): self
-    {
-        $this->created_at = $created_at;
-        return $this;
-    }
-
-    public function isRead(): ?bool
+    public function is_read(): bool
     {
         return $this->is_read;
     }
 
-    public function setIsRead(bool $is_read): static
+    public function setIsRead(bool $is_read): self
     {
         $this->is_read = $is_read;
 
         return $this;
     }
 
-    public function getCreatedAt(): ?\DateTime
+    public function getCreatedAt(): ?\DateTimeImmutable
     {
         return $this->created_at;
     }
 
-    public function setCreatedAt(\DateTime $created_at): static
+    public function setCreatedAt(?\DateTimeImmutable $created_at): self
     {
         $this->created_at = $created_at;
 
         return $this;
     }
 
+    public function getCreated_at(): ?\DateTimeImmutable
+    {
+        return $this->created_at;
+    }
+
+    public function setCreated_at(?\DateTimeImmutable $created_at): self
+    {
+        $this->created_at = $created_at;
+
+        return $this;
+    }
 }

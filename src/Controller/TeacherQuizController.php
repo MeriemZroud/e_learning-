@@ -6,6 +6,7 @@ use App\Entity\Course;
 use App\Entity\CourseQuiz;
 use App\Entity\CourseQuizSubmission;
 use App\Entity\User;
+use App\Repository\NotificationRepository;
 use App\Repository\CourseQuizRepository;
 use App\Repository\CourseQuizSubmissionRepository;
 use App\Repository\CourseRepository;
@@ -19,7 +20,7 @@ use Symfony\Component\Routing\Attribute\Route;
 class TeacherQuizController extends AbstractController
 {
     #[Route('/teacher/submissions', name: 'app_teacher_submissions', methods: ['GET'])]
-    public function submissions(CourseQuizSubmissionRepository $submissionRepository): Response
+    public function submissions(CourseQuizSubmissionRepository $submissionRepository, NotificationRepository $notificationRepository): Response
     {
         $teacher = $this->requireTeacherUser();
         $submissions = $submissionRepository->findAllByTeacher($teacher);
@@ -45,11 +46,12 @@ class TeacherQuizController extends AbstractController
         return $this->render('dashboard/teacher_submissions.html.twig', [
             'teacher_name' => $this->getTeacherName($teacher),
             'submission_rows' => $submissionRows,
+            'unreadNotifications' => $notificationRepository->findUnreadByUser($teacher),
         ]);
     }
 
     #[Route('/teacher/submissions/{id}', name: 'app_teacher_submission_detail', methods: ['GET'])]
-    public function submissionDetail(int $id, CourseQuizSubmissionRepository $submissionRepository): Response
+    public function submissionDetail(int $id, CourseQuizSubmissionRepository $submissionRepository, NotificationRepository $notificationRepository): Response
     {
         $teacher = $this->requireTeacherUser();
         $submission = $submissionRepository->find($id);
@@ -96,11 +98,12 @@ class TeacherQuizController extends AbstractController
             'submitted_at' => $submission->getSubmittedAt(),
             'status' => $submission->getStatus(),
             'review_rows' => $reviewRows,
+            'unreadNotifications' => $notificationRepository->findUnreadByUser($teacher),
         ]);
     }
 
     #[Route('/teacher/courses/{id}/quiz', name: 'app_teacher_course_quiz', methods: ['GET'])]
-    public function show(int $id, CourseRepository $courseRepository, CourseQuizRepository $quizRepository, CourseQuizSubmissionRepository $submissionRepository): Response
+    public function show(int $id, CourseRepository $courseRepository, CourseQuizRepository $quizRepository, CourseQuizSubmissionRepository $submissionRepository, NotificationRepository $notificationRepository): Response
     {
         $teacher = $this->requireTeacherUser();
         $course = $courseRepository->find($id);
@@ -136,6 +139,7 @@ class TeacherQuizController extends AbstractController
             'quiz' => $quiz,
             'questions' => $questions,
             'submission_rows' => $submissionRows,
+            'unreadNotifications' => $notificationRepository->findUnreadByUser($teacher),
         ]);
     }
 

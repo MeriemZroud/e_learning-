@@ -1,0 +1,141 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Admin Notifications{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('styles/admin-theme.css') }}">
+{% endblock %}
+
+{% block body %}
+    <main class="student-home">
+        <div class="student-home__container">
+            <header class="student-topbar">
+                <a class="student-logo" href="{{ path('app_admin_dashboard') }}">LearnWay</a>
+                <nav class="student-nav" aria-label="Admin navigation">
+                    <a href="{{ path('app_admin_dashboard') }}">Dashboard</a>
+                    <a href="{{ path('app_reclamation_index') }}">Reclamations</a>
+                    <a href="{{ path('app_admin_notifications') }}" class="is-active">Notifications</a>
+                    <a href="{{ path('app_logout') }}">Logout</a>
+                </nav>
+                <div class="student-user">
+                    {% if app.user and app.user.profileImage %}
+                        <img class="student-user__avatar student-user__avatar-image" src="{{ asset('uploads/profile/' ~ app.user.profileImage) }}" alt="{{ app.user.firstName|default('Admin') }} avatar">
+                    {% else %}
+                        <span class="student-user__avatar">{{ app.user.firstName|default('A')|slice(0, 1)|upper }}</span>
+                    {% endif %}
+                    <span class="student-user__name">{{ (app.user.firstName ~ ' ' ~ app.user.lastName)|trim }}</span>
+                </div>
+            </header>
+
+            <section class="student-section">
+                <div class="admin-notifications-page">
+                    <div class="admin-notifications-header">
+                        <h2>Admin Notifications</h2>
+                        <div class="admin-notifications-actions">
+                            <span class="admin-notifications-count">{{ unreadCount }} unread</span>
+                        </div>
+                    </div>
+
+                    <div class="admin-notifications-toolbar">
+                        <label class="admin-notifications-toolbar__field">
+                            <span>Search</span>
+                            <input id="notifications-search" type="search" placeholder="Search message or type...">
+                        </label>
+                        <label class="admin-notifications-toolbar__field">
+                            <span>Filter</span>
+                            <select id="notifications-filter">
+                                <option value="all">All notifications</option>
+                                <option value="unread">Unread only</option>
+                                <option value="read">Read only</option>
+                                <option value="status">Type: Status</option>
+                                <option value="reclamation">Type: Reclamation</option>
+                            </select>
+                        </label>
+                    </div>
+
+                    <div class="admin-notifications-list" id="admin-notifications-list">
+                        {% for notification in notifications %}
+                            <article
+                                class="admin-notification-item {% if not notification.isRead %}is-unread{% endif %}"
+                                data-read="{{ notification.isRead ? 'read' : 'unread' }}"
+                                data-type="{{ notification.type|lower }}"
+                                data-search="{{ (notification.message ~ ' ' ~ notification.type)|lower }}"
+                            >
+                                <div class="admin-notification-meta">
+                                    <span class="badge {{ notification.isRead ? 'text-bg-secondary' : 'text-bg-info' }}">
+                                        {{ notification.type|replace({'_': ' '})|title }}
+                                    </span>
+                                    <div class="admin-notification-meta__right">
+                                        <small>{{ notification.createdAt ? notification.createdAt|date('d/m/Y H:i') : '' }}</small>
+                                        {% if not notification.isRead %}
+                                            <form method="post" action="{{ path('app_admin_notification_read', {id: notification.id}) }}">
+                                                <input type="hidden" name="_token" value="{{ csrf_token('admin_notification_read_' ~ notification.id) }}">
+                                                <button type="submit" class="admin-notification-read-btn">Mark as read</button>
+                                            </form>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <p>{{ notification.message }}</p>
+                            </article>
+                        {% else %}
+                            <p>No notifications yet.</p>
+                        {% endfor %}
+                    </div>
+                    <p id="admin-notifications-empty" class="admin-notifications-empty" hidden>No notifications match your filters.</p>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('notifications-search');
+            const filterSelect = document.getElementById('notifications-filter');
+            const list = document.getElementById('admin-notifications-list');
+            const emptyState = document.getElementById('admin-notifications-empty');
+
+            if (!searchInput || !filterSelect || !list || !emptyState) {
+                return;
+            }
+
+            const items = Array.from(list.querySelectorAll('.admin-notification-item'));
+            if (items.length === 0) {
+                return;
+            }
+
+            const updateVisibility = function() {
+                const q = searchInput.value.trim().toLowerCase();
+                const f = filterSelect.value;
+                let visibleCount = 0;
+
+                items.forEach(function(item) {
+                    const search = item.dataset.search || '';
+                    const read = item.dataset.read || 'read';
+                    const type = item.dataset.type || '';
+
+                    const matchesQuery = q === '' || search.includes(q);
+                    const matchesFilter = (
+                        f === 'all' ||
+                        (f === 'unread' && read === 'unread') ||
+                        (f === 'read' && read === 'read') ||
+                        (f === 'status' && type === 'status') ||
+                        (f === 'reclamation' && type === 'reclamation')
+                    );
+
+                    const visible = matchesQuery && matchesFilter;
+                    item.hidden = !visible;
+
+                    if (visible) {
+                        visibleCount += 1;
+                    }
+                });
+
+                emptyState.hidden = visibleCount > 0;
+            };
+
+            searchInput.addEventListener('input', updateVisibility);
+            filterSelect.addEventListener('change', updateVisibility);
+        });
+    </script>
+{% endblock %}

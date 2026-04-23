@@ -6,6 +6,7 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use DateTime;
 
 use App\Repository\ReclamationRepository;
 
@@ -13,6 +14,10 @@ use App\Repository\ReclamationRepository;
 #[ORM\Table(name: 'reclamations')]
 class Reclamation
 {
+    public const STATUS_IN_PROGRESS = 'IN_PROGRESS';
+    public const STATUS_RESOLVED = 'RESOLVED';
+    public const STATUS_REJECTED = 'REJECTED';
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
@@ -58,7 +63,7 @@ class Reclamation
         return $this;
     }
 
-    #[ORM\Column(type: 'string', nullable: true)]
+    #[ORM\Column(type: 'string', length: 20, nullable: true)]
     private ?string $status = null;
 
     public function getStatus(): ?string
@@ -68,7 +73,22 @@ class Reclamation
 
     public function setStatus(?string $status): self
     {
-        $this->status = $status;
+        if ($status === null || $status === '') {
+            $this->status = null;
+
+            return $this;
+        }
+
+        $normalized = strtoupper(trim($status));
+        $aliases = [
+            'IN_PROGRESS' => self::STATUS_IN_PROGRESS,
+            'PENDING' => self::STATUS_IN_PROGRESS,
+            'RESOLVED' => self::STATUS_RESOLVED,
+            'REJECTED' => self::STATUS_REJECTED,
+        ];
+
+        $this->status = $aliases[$normalized] ?? self::STATUS_IN_PROGRESS;
+
         return $this;
     }
 

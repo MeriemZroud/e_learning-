@@ -169,41 +169,12 @@ class Classe
         return $this;
     }
 
-    #[ORM\OneToMany(targetEntity: Notification::class, mappedBy: 'classe')]
-    private Collection $notifications;
-
-    /**
-     * @return Collection<int, Notification>
-     */
-    public function getNotifications(): Collection
-    {
-        if (!$this->notifications instanceof Collection) {
-            $this->notifications = new ArrayCollection();
-        }
-        return $this->notifications;
-    }
-
-    public function addNotification(Notification $notification): self
-    {
-        if (!$this->getNotifications()->contains($notification)) {
-            $this->getNotifications()->add($notification);
-        }
-        return $this;
-    }
-
-    public function removeNotification(Notification $notification): self
-    {
-        $this->getNotifications()->removeElement($notification);
-        return $this;
-    }
-
     #[ORM\OneToOne(targetEntity: SubjectSection::class, mappedBy: 'classe')]
     private ?SubjectSection $subjectSection = null;
 
     public function __construct()
     {
         $this->forumPosts = new ArrayCollection();
-        $this->notifications = new ArrayCollection();
     }
 
     public function getSubjectSection(): ?SubjectSection

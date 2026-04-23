@@ -1,0 +1,205 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Reclamations{% endblock %}
+
+{% block body %}
+<main class="student-home">
+    <div class="student-home__container">
+        <header class="student-topbar">
+            {% if is_granted('ROLE_ADMIN') %}
+                <a class="student-logo" href="{{ path('app_admin_dashboard') }}">LearnWay</a>
+                <nav class="student-nav" aria-label="Admin navigation">
+                    <a href="{{ path('app_admin_dashboard') }}">Dashboard</a>
+                    <a href="{{ path('app_reclamation_index') }}" class="is-active">Reclamations</a>
+                    <a href="{{ path('app_logout') }}">Logout</a>
+                </nav>
+            {% elseif is_granted('ROLE_TEACHER') %}
+                <a class="student-logo" href="{{ path('app_teacher_course_index') }}">LearnWay</a>
+                <nav class="student-nav" aria-label="Teacher navigation">
+                    <a href="{{ path('app_teacher_course_index') }}">Courses</a>
+                    <a href="{{ path('app_teacher_course_new') }}">Add course</a>
+                    <a href="{{ path('app_teacher_submissions') }}">Submissions</a>
+                    <a href="{{ path('app_reclamation_index') }}" class="is-active">Reclamations</a>
+                    <a href="{{ path('app_logout') }}">Logout</a>
+                </nav>
+            {% else %}
+                <a class="student-logo" href="{{ path('app_student_dashboard') }}">LearnWay</a>
+                <nav class="student-nav" aria-label="Main navigation">
+                    <a href="{{ path('app_student_dashboard') }}">Home</a>
+                    <a href="{{ path('app_student_quiz_index') }}">Course</a>
+                    <a href="#">Career</a>
+                    <a href="{{ path('app_student_forum_index') }}">Blog</a>
+                    <a href="{{ path('app_student_profile') }}">Profile</a>
+                    <a href="{{ path('app_student_about') }}">About us</a>
+                    <a href="{{ path('app_reclamation_index') }}" class="is-active">Reclamations</a>
+                </nav>
+            {% endif %}
+            <div class="student-topbar__actions">
+                <div class="student-user">
+                    {% if app.user and app.user.profileImage %}
+                        <img class="student-user__avatar student-user__avatar-image" src="{{ asset('uploads/profile/' ~ app.user.profileImage) }}" alt="{{ app.user.firstName|default('User') }} avatar">
+                    {% else %}
+                        <span class="student-user__avatar">{{ app.user.firstName|default('U')|slice(0, 1)|upper }}</span>
+                    {% endif %}
+                    <span class="student-user__name">{{ app.user.firstName|default('User') }}</span>
+                </div>
+
+                <div class="student-notifications">
+                    <button
+                        class="student-notifications__button"
+                        type="button"
+                        aria-label="Notifications"
+                        aria-expanded="false"
+                        id="notifications-toggle"
+                    >
+                        <span class="student-notifications__emoji" aria-hidden="true">
+                            <svg class="student-notifications__icon" viewBox="0 0 24 24" fill="none" focusable="false">
+                                <path d="M15 17H9m9-1V11a6 6 0 10-12 0v5l-2 2h16l-2-2zm-8 2a2 2 0 104 0" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"/>
+                            </svg>
+                        </span>
+                        {% if unreadNotifications is not empty %}
+                            <span class="student-notifications__badge">{{ unreadNotifications|length }}</span>
+                        {% endif %}
+                    </button>
+
+                    <section class="student-notifications-panel" id="notifications-panel" aria-hidden="true">
+                        <div class="student-notifications-panel__header">
+                            <span class="student-notifications-panel__title">Notifications</span>
+                            <span class="student-notifications-panel__count">{{ unreadNotifications|length }} new</span>
+                        </div>
+                        <div class="student-notifications-panel__list">
+                            {% for notification in unreadNotifications %}
+                                <article class="student-notifications-panel__item">
+                                    <strong>{{ notification.type|default('info')|replace({'_':' '})|title }}</strong>
+                                    <p>{{ notification.message }}</p>
+                                    <small>{{ notification.createdAt ? notification.createdAt|date('d/m/Y H:i') : '' }}</small>
+                                </article>
+                            {% else %}
+                                <article class="student-notifications-panel__item student-notifications-panel__item--empty">
+                                    <p>No new notifications.</p>
+                                </article>
+                            {% endfor %}
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </header>
+
+        <section class="student-profile-hero">
+            <div>
+                <p class="student-profile-hero__kicker">Reclamations</p>
+                <h1>Manage Your Reclamations</h1>
+                <p>{% if is_granted('ROLE_ADMIN') %}View and manage all user reclamations.{% else %}Create, view, and manage your reclamations.{% endif %}</p>
+            </div>
+            {% if not is_granted('ROLE_ADMIN') %}
+                <a class="student-btn student-btn--primary" href="{{ path('app_reclamation_new') }}">New Reclamation</a>
+            {% endif %}
+        </section>
+
+        <section class="student-section">
+            {% for label, messages in app.flashes %}
+                {% for message in messages %}
+                    <div class="student-forum-alert {% if label == 'error' %}student-forum-alert--error{% endif %}">{{ message }}</div>
+                {% endfor %}
+            {% endfor %}
+
+            {% if reclamations is empty %}
+                <article class="student-related-card">
+                    <div class="student-related-card__content">
+                        <h3>No reclamations yet</h3>
+                        <p>{% if is_granted('ROLE_ADMIN') %}No reclamations have been submitted yet.{% else %}You haven't submitted any reclamations yet.{% endif %}</p>
+                        {% if not is_granted('ROLE_ADMIN') %}
+                            <a class="student-btn student-btn--primary" href="{{ path('app_reclamation_new') }}">Create your first reclamation</a>
+                        {% endif %}
+                    </div>
+                </article>
+            {% else %}
+                <div class="student-forum-list">
+                    {% for reclamation in reclamations %}
+                        <article class="student-forum-post">
+                            <header class="student-forum-post__header">
+                                <div>
+                                    <h3>Reclamation </h3>
+                                    <p>
+                                        by {{ reclamation.user ? (reclamation.user.firstName ~ ' ' ~ reclamation.user.lastName)|trim : 'Unknown' }}
+                                        · {{ reclamation.createdAt ? reclamation.createdAt|date('d/m/Y H:i') : '-' }}
+                                        {% if reclamation.status %}
+                                            · Status: <span class="status-{{ reclamation.status|lower }}">{{ reclamation.status|replace({'_': ' '})|title }}</span>
+                                        {% endif %}
+                                    </p>
+                                </div>
+                                <div class="student-forum-post__actions">
+                                    <a href="{{ path('app_reclamation_show', {'id': reclamation.id}) }}" class="student-btn student-btn--small">View</a>
+                                    {% if not is_granted('ROLE_ADMIN') or reclamation.user == app.user %}
+                                        <a href="{{ path('app_reclamation_edit', {'id': reclamation.id}) }}" class="student-btn student-btn--small">Edit</a>
+                                    {% endif %}
+                                    {% if is_granted('ROLE_ADMIN') %}
+                                        <form method="post" action="{{ path('app_reclamation_edit', {'id': reclamation.id}) }}" style="display: inline-block; margin-left: 10px;">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('update_status') }}">
+                                            <select name="status" onchange="this.form.submit()">
+                                                <option value="IN_PROGRESS" {% if reclamation.status == 'IN_PROGRESS' %}selected{% endif %}>In Progress</option>
+                                                <option value="RESOLVED" {% if reclamation.status == 'RESOLVED' %}selected{% endif %}>Resolved</option>
+                                                <option value="REJECTED" {% if reclamation.status == 'REJECTED' %}selected{% endif %}>Rejected</option>
+                                            </select>
+                                        </form>
+                                    {% endif %}
+                                </div>
+                            </header>
+                            <div class="student-forum-post__content">
+                                <p>{{ reclamation.message|length > 200 ? reclamation.message|slice(0, 200) ~ '...' : reclamation.message }}</p>
+                            </div>
+                        </article>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </section>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const notificationsToggle = document.getElementById('notifications-toggle');
+            const notificationsPanel = document.getElementById('notifications-panel');
+
+            if (notificationsToggle && notificationsPanel) {
+                const closePanel = function() {
+                    notificationsPanel.classList.remove('is-visible');
+                    notificationsPanel.setAttribute('aria-hidden', 'true');
+                    notificationsToggle.setAttribute('aria-expanded', 'false');
+                };
+
+                const openPanel = function() {
+                    notificationsPanel.classList.add('is-visible');
+                    notificationsPanel.setAttribute('aria-hidden', 'false');
+                    notificationsToggle.setAttribute('aria-expanded', 'true');
+                };
+
+                notificationsToggle.addEventListener('click', function(event) {
+                    event.stopPropagation();
+
+                    if (notificationsPanel.classList.contains('is-visible')) {
+                        closePanel();
+
+                        return;
+                    }
+
+                    openPanel();
+                });
+
+                notificationsPanel.addEventListener('click', function(event) {
+                    event.stopPropagation();
+                });
+
+                document.addEventListener('click', function() {
+                    closePanel();
+                });
+
+                document.addEventListener('keydown', function(event) {
+                    if (event.key === 'Escape') {
+                        closePanel();
+                    }
+                });
+            }
+        });
+    </script>
+</main>
+{% endblock %}

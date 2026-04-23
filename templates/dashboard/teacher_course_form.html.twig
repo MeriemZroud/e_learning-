@@ -11,15 +11,58 @@
                 <a href="{{ path('app_teacher_course_index') }}">Courses</a>
                 <a href="{{ path('app_teacher_course_new') }}" class="{% if not is_edit %}is-active{% endif %}">Add course</a>
                 <a href="{{ path('app_teacher_submissions') }}">Submissions</a>
+                    <a href="{{ path('app_reclamation_index') }}">Reclamations</a>
+                 
                 <a href="{{ path('app_logout') }}">Logout</a>
             </nav>
-            <div class="student-user">
-                {% if app.user and app.user.profileImage %}
-                    <img class="student-user__avatar student-user__avatar-image" src="{{ asset('uploads/profile/' ~ app.user.profileImage) }}" alt="{{ teacher_name }} avatar">
-                {% else %}
-                    <span class="student-user__avatar">{{ teacher_name|slice(0, 1)|upper }}</span>
-                {% endif %}
-                <span class="student-user__name">{{ teacher_name }}</span>
+            <div class="student-topbar__actions">
+                <div class="student-user">
+                    {% if app.user and app.user.profileImage %}
+                        <img class="student-user__avatar student-user__avatar-image" src="{{ asset('uploads/profile/' ~ app.user.profileImage) }}" alt="{{ teacher_name }} avatar">
+                    {% else %}
+                        <span class="student-user__avatar">{{ teacher_name|slice(0, 1)|upper }}</span>
+                    {% endif %}
+                    <span class="student-user__name">{{ teacher_name }}</span>
+                </div>
+
+                <div class="student-notifications">
+                    <button
+                        class="student-notifications__button"
+                        type="button"
+                        aria-label="Notifications"
+                        aria-expanded="false"
+                        id="notifications-toggle"
+                    >
+                        <span class="student-notifications__emoji" aria-hidden="true">
+                            <svg class="student-notifications__icon" viewBox="0 0 24 24" fill="none" focusable="false">
+                                <path d="M15 17H9m9-1V11a6 6 0 10-12 0v5l-2 2h16l-2-2zm-8 2a2 2 0 104 0" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"/>
+                            </svg>
+                        </span>
+                        {% if unreadNotifications is not empty %}
+                            <span class="student-notifications__badge">{{ unreadNotifications|length }}</span>
+                        {% endif %}
+                    </button>
+
+                    <section class="student-notifications-panel" id="notifications-panel" aria-hidden="true">
+                        <div class="student-notifications-panel__header">
+                            <span class="student-notifications-panel__title">Notifications</span>
+                            <span class="student-notifications-panel__count">{{ unreadNotifications|length }} new</span>
+                        </div>
+                        <div class="student-notifications-panel__list">
+                            {% for notification in unreadNotifications %}
+                                <article class="student-notifications-panel__item">
+                                    <strong>{{ notification.type|default('info')|replace({'_':' '})|title }}</strong>
+                                    <p>{{ notification.message }}</p>
+                                    <small>{{ notification.createdAt ? notification.createdAt|date('d/m/Y H:i') : '' }}</small>
+                                </article>
+                            {% else %}
+                                <article class="student-notifications-panel__item student-notifications-panel__item--empty">
+                                    <p>No new notifications.</p>
+                                </article>
+                            {% endfor %}
+                        </div>
+                    </section>
+                </div>
             </div>
         </header>
 
@@ -92,5 +135,51 @@
             </article>
         </section>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const notificationsToggle = document.getElementById('notifications-toggle');
+            const notificationsPanel = document.getElementById('notifications-panel');
+
+            if (notificationsToggle && notificationsPanel) {
+                const closePanel = function() {
+                    notificationsPanel.classList.remove('is-visible');
+                    notificationsPanel.setAttribute('aria-hidden', 'true');
+                    notificationsToggle.setAttribute('aria-expanded', 'false');
+                };
+
+                const openPanel = function() {
+                    notificationsPanel.classList.add('is-visible');
+                    notificationsPanel.setAttribute('aria-hidden', 'false');
+                    notificationsToggle.setAttribute('aria-expanded', 'true');
+                };
+
+                notificationsToggle.addEventListener('click', function(event) {
+                    event.stopPropagation();
+
+                    if (notificationsPanel.classList.contains('is-visible')) {
+                        closePanel();
+                        return;
+                    }
+
+                    openPanel();
+                });
+
+                notificationsPanel.addEventListener('click', function(event) {
+                    event.stopPropagation();
+                });
+
+                document.addEventListener('click', function() {
+                    closePanel();
+                });
+
+                document.addEventListener('keydown', function(event) {
+                    if (event.key === 'Escape') {
+                        closePanel();
+                    }
+                });
+            }
+        });
+    </script>
 </main>
 {% endblock %}

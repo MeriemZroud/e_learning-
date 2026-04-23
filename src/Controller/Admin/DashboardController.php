@@ -2,6 +2,8 @@
 
 namespace App\Controller\Admin;
 
+use App\Entity\User;
+use App\Repository\NotificationRepository;
 use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminDashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Assets;
@@ -15,6 +17,10 @@ use Symfony\Component\HttpFoundation\Response;
 #[AdminDashboard(routePath: '/admin', routeName: 'app_admin_dashboard')]
 class DashboardController extends AbstractDashboardController
 {
+    public function __construct(private readonly NotificationRepository $notificationRepository)
+    {
+    }
+
     public function index(): Response
     {
         /** @var AdminUrlGenerator $adminUrlGenerator */
@@ -50,7 +56,7 @@ class DashboardController extends AbstractDashboardController
         yield MenuItem::linkToCrud('Users', 'fa fa-users', \App\Entity\User::class);
 
         $currentUser = $this->getUser();
-        if ($currentUser instanceof \App\Entity\User && null !== $currentUser->getId()) {
+        if ($currentUser instanceof User && null !== $currentUser->getId()) {
             $profileUrl = $adminUrlGenerator
                 ->unsetAll()
                 ->setController(UserCrudController::class)
@@ -58,7 +64,14 @@ class DashboardController extends AbstractDashboardController
                 ->setEntityId((string) $currentUser->getId())
                 ->generateUrl();
 
+            $unreadCount = $this->notificationRepository->countUnreadByUser($currentUser);
+            $notificationLabel = $unreadCount > 0
+                ? sprintf('Notifications (%d)', $unreadCount)
+                : 'Notifications';
+
             yield MenuItem::linkToUrl('Profile', 'fa fa-id-badge', $profileUrl);
+            yield MenuItem::linkToCrud($notificationLabel, 'fa fa-bell', \App\Entity\Notification::class);
+            yield MenuItem::linkToCrud('Reclamations', 'fa fa-exclamation-circle', \App\Entity\Reclamation::class);
         }
     }
 }

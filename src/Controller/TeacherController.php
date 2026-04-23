@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\Course;
 use App\Entity\User;
 use App\Repository\CourseRepository;
+use App\Repository\NotificationRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
@@ -17,18 +18,19 @@ use Symfony\Component\Routing\Attribute\Route;
 class TeacherController extends AbstractController
 {
     #[Route('/teacher/courses', name: 'app_teacher_course_index', methods: ['GET'])]
-    public function index(CourseRepository $courseRepository): Response
+    public function index(CourseRepository $courseRepository, NotificationRepository $notificationRepository): Response
     {
         $teacher = $this->requireTeacherUser();
 
         return $this->render('dashboard/teacher_courses.html.twig', [
             'teacher_name' => $this->getTeacherName($teacher),
             'courses' => $courseRepository->findByTeacher($teacher),
+            'unreadNotifications' => $notificationRepository->findUnreadByUser($teacher),
         ]);
     }
 
     #[Route('/teacher/courses/new', name: 'app_teacher_course_new', methods: ['GET', 'POST'])]
-    public function create(Request $request, EntityManagerInterface $entityManager): Response
+    public function create(Request $request, EntityManagerInterface $entityManager, NotificationRepository $notificationRepository): Response
     {
         $teacher = $this->requireTeacherUser();
         $course = new Course();
@@ -56,11 +58,12 @@ class TeacherController extends AbstractController
             'teacher_name' => $this->getTeacherName($teacher),
             'course' => $course,
             'is_edit' => false,
+            'unreadNotifications' => $notificationRepository->findUnreadByUser($teacher),
         ]);
     }
 
     #[Route('/teacher/courses/{id}/edit', name: 'app_teacher_course_edit', methods: ['GET', 'POST'])]
-    public function edit(int $id, Request $request, CourseRepository $courseRepository, EntityManagerInterface $entityManager): Response
+    public function edit(int $id, Request $request, CourseRepository $courseRepository, EntityManagerInterface $entityManager, NotificationRepository $notificationRepository): Response
     {
         $teacher = $this->requireTeacherUser();
         $course = $courseRepository->find($id);
@@ -87,6 +90,7 @@ class TeacherController extends AbstractController
             'teacher_name' => $this->getTeacherName($teacher),
             'course' => $course,
             'is_edit' => true,
+            'unreadNotifications' => $notificationRepository->findUnreadByUser($teacher),
         ]);
     }
 
