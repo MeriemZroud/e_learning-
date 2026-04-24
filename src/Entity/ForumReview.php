@@ -151,4 +151,13 @@ class ForumReview
         return $this;
     }
 
+    public function __toString(): string
+    {
+        if ($this->rating !== null) {
+            return sprintf('Rating %d/5', $this->rating);
+        }
+
+        return sprintf('Review #%d', (int) ($this->id ?? 0));
+    }
+
 }

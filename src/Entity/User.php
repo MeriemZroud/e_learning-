@@ -415,6 +415,20 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->getUserIdentifier();
     }
 
+    public function __toString(): string
+    {
+        $fullName = trim(sprintf('%s %s', (string) $this->first_name, (string) $this->last_name));
+        if ($fullName !== '') {
+            return $fullName;
+        }
+
+        if ($this->email !== null && $this->email !== '') {
+            return $this->email;
+        }
+
+        return sprintf('User #%d', (int) ($this->id ?? 0));
+    }
+
     public function getPassword(): ?string
     {
         return $this->password_hash;

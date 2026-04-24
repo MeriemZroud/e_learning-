@@ -140,4 +140,15 @@ class CourseQuiz
 
         return $this;
     }
+
+    public function __toString(): string
+    {
+        $title = trim((string) $this->title);
+
+        if ($title !== '') {
+            return $title;
+        }
+
+        return sprintf('Quiz #%d', (int) ($this->id ?? 0));
+    }
 }

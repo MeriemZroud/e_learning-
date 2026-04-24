@@ -1,0 +1,212 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('styles/admin-theme.css') }}">
+{% endblock %}
+
+{% block body %}
+<main class="student-home admin-dashboard-page">
+    <div class="student-home__container">
+        <header class="student-topbar">
+            <a class="student-logo" href="{{ path('app_admin_dashboard') }}">LearnWay</a>
+            <nav class="student-nav" aria-label="Admin navigation">
+                <a href="{{ path('app_admin_dashboard') }}" class="is-active">Dashboard</a>
+                <a href="{{ usersUrl }}">Users</a>
+                <a href="{{ coursesUrl }}">Courses</a>
+                <a href="{{ submissionsUrl }}">Submissions</a>
+                <a href="{{ forumPostsUrl }}">Forum posts</a>
+                <a href="{{ forumCommentsUrl }}">Comments</a>
+                <a href="{{ forumRatingsUrl }}">Ratings</a>
+                <a href="{{ reclamationsUrl }}">Reclamations</a>
+                <a href="{{ notificationsUrl }}">Notifications</a>
+                <a href="{{ profileUrl }}">Profile</a>
+                <a href="{{ path('app_logout') }}">Logout</a>
+            </nav>
+            <div class="student-topbar__actions">
+                <div class="student-user">
+                    {% if app.user and app.user.profileImage %}
+                        <img class="student-user__avatar student-user__avatar-image" src="{{ asset('uploads/profile/' ~ app.user.profileImage) }}" alt="{{ admin_name }} avatar">
+                    {% else %}
+                        <span class="student-user__avatar">{{ admin_name|slice(0, 1)|upper }}</span>
+                    {% endif %}
+                    <span class="student-user__name">{{ admin_name }}</span>
+                </div>
+
+                <div class="student-notifications">
+                    <button
+                        class="student-notifications__button"
+                        type="button"
+                        aria-label="Notifications"
+                        aria-expanded="false"
+                        id="notifications-toggle"
+                    >
+                        <span class="student-notifications__emoji" aria-hidden="true">
+                            <svg class="student-notifications__icon" viewBox="0 0 24 24" fill="none" focusable="false">
+                                <path d="M15 17H9m9-1V11a6 6 0 10-12 0v5l-2 2h16l-2-2zm-8 2a2 2 0 104 0" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"/>
+                            </svg>
+                        </span>
+                        {% if unreadNotifications is not empty %}
+                            <span class="student-notifications__badge">{{ unreadNotifications|length }}</span>
+                        {% endif %}
+                    </button>
+
+                    <section class="student-notifications-panel" id="notifications-panel" aria-hidden="true">
+                        <div class="student-notifications-panel__header">
+                            <span class="student-notifications-panel__title">Notifications</span>
+                            <span class="student-notifications-panel__count">{{ unreadNotifications|length }} new</span>
+                        </div>
+                        <div class="student-notifications-panel__list">
+                            {% for notification in unreadNotifications %}
+                                <article class="student-notifications-panel__item">
+                                    <strong>{{ notification.type|default('info')|replace({'_': ' '})|title }}</strong>
+                                    <p>{{ notification.message }}</p>
+                                    <small>{{ notification.createdAt ? notification.createdAt|date('d/m/Y H:i') : '' }}</small>
+                                </article>
+                            {% else %}
+                                <article class="student-notifications-panel__item student-notifications-panel__item--empty">
+                                    <p>No new notifications.</p>
+                                </article>
+                            {% endfor %}
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </header>
+
+        <section class="student-profile-hero admin-dashboard-hero">
+            <div>
+                <p class="student-profile-hero__kicker">Admin panel</p>
+                <h1>Welcome back, {{ admin_name }}</h1>
+                <p>Manage users, reclamations, and platform activity from one professional dashboard.</p>
+            </div>
+            <a class="student-btn student-btn--primary" href="{{ usersUrl }}">Open admin management</a>
+        </section>
+
+        <section class="student-section admin-dashboard-section">
+            <div class="admin-dashboard-stats">
+                <article class="admin-dashboard-stat">
+                    <span>Total users</span>
+                    <strong>{{ stats.users }}</strong>
+                </article>
+                <article class="admin-dashboard-stat">
+                    <span>Total courses</span>
+                    <strong>{{ stats.courses }}</strong>
+                </article>
+                <article class="admin-dashboard-stat">
+                    <span>Total submissions</span>
+                    <strong>{{ stats.submissions }}</strong>
+                </article>
+                <article class="admin-dashboard-stat">
+                    <span>Forum posts</span>
+                    <strong>{{ stats.forumPosts }}</strong>
+                </article>
+                <article class="admin-dashboard-stat">
+                    <span>Forum comments</span>
+                    <strong>{{ stats.forumComments }}</strong>
+                </article>
+                <article class="admin-dashboard-stat">
+                    <span>Forum ratings</span>
+                    <strong>{{ stats.forumRatings }}</strong>
+                </article>
+                <article class="admin-dashboard-stat">
+                    <span>Total reclamations</span>
+                    <strong>{{ stats.reclamations }}</strong>
+                </article>
+                <article class="admin-dashboard-stat">
+                    <span>Unread notifications</span>
+                    <strong>{{ stats.unreadNotifications }}</strong>
+                </article>
+            </div>
+
+            <div class="admin-dashboard-actions">
+                <a class="admin-dashboard-action" href="{{ usersUrl }}">
+                    <h3>Manage users</h3>
+                    <p>Create, edit and monitor all user accounts.</p>
+                </a>
+                <a class="admin-dashboard-action" href="{{ coursesUrl }}">
+                    <h3>Manage courses</h3>
+                    <p>Publish, update and organize course content.</p>
+                </a>
+                <a class="admin-dashboard-action" href="{{ submissionsUrl }}">
+                    <h3>Manage submissions</h3>
+                    <p>Review quiz submissions from students quickly.</p>
+                </a>
+                <a class="admin-dashboard-action" href="{{ forumPostsUrl }}">
+                    <h3>Manage forum posts</h3>
+                    <p>Moderate and organize student forum posts.</p>
+                </a>
+                <a class="admin-dashboard-action" href="{{ forumCommentsUrl }}">
+                    <h3>Manage comments</h3>
+                    <p>Review replies and threaded discussion quality.</p>
+                </a>
+                <a class="admin-dashboard-action" href="{{ forumRatingsUrl }}">
+                    <h3>Manage ratings</h3>
+                    <p>Track ratings and feedback on forum content.</p>
+                </a>
+                <a class="admin-dashboard-action" href="{{ reclamationsUrl }}">
+                    <h3>Manage reclamations</h3>
+                    <p>Review and process submitted reclamations quickly.</p>
+                </a>
+                <a class="admin-dashboard-action" href="{{ notificationsUrl }}">
+                    <h3>View notifications</h3>
+                    <p>Track system alerts and unread admin notifications.</p>
+                </a>
+                <a class="admin-dashboard-action" href="{{ profileUrl }}">
+                    <h3>Edit profile</h3>
+                    <p>Update your personal information and avatar.</p>
+                </a>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const notificationsToggle = document.getElementById('notifications-toggle');
+            const notificationsPanel = document.getElementById('notifications-panel');
+
+            if (notificationsToggle && notificationsPanel) {
+                const closePanel = function() {
+                    notificationsPanel.classList.remove('is-visible');
+                    notificationsPanel.setAttribute('aria-hidden', 'true');
+                    notificationsToggle.setAttribute('aria-expanded', 'false');
+                };
+
+                const openPanel = function() {
+                    notificationsPanel.classList.add('is-visible');
+                    notificationsPanel.setAttribute('aria-hidden', 'false');
+                    notificationsToggle.setAttribute('aria-expanded', 'true');
+                };
+
+                notificationsToggle.addEventListener('click', function(event) {
+                    event.stopPropagation();
+
+                    if (notificationsPanel.classList.contains('is-visible')) {
+                        closePanel();
+
+                        return;
+                    }
+
+                    openPanel();
+                });
+
+                notificationsPanel.addEventListener('click', function(event) {
+                    event.stopPropagation();
+                });
+
+                document.addEventListener('click', function() {
+                    closePanel();
+                });
+
+                document.addEventListener('keydown', function(event) {
+                    if (event.key === 'Escape') {
+                        closePanel();
+                    }
+                });
+            }
+        });
+    </script>
+</main>
+{% endblock %}

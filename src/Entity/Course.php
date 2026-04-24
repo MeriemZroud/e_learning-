@@ -154,4 +154,15 @@ class Course
 
         return $this;
     }
+
+    public function __toString(): string
+    {
+        $title = trim((string) $this->title);
+
+        if ($title !== '') {
+            return $title;
+        }
+
+        return sprintf('Course #%d', (int) ($this->id ?? 0));
+    }
 }

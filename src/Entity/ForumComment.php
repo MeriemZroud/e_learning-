@@ -187,4 +187,17 @@ class ForumComment
         return $this;
     }
 
+    public function __toString(): string
+    {
+        $content = trim((string) $this->content);
+
+        if ($content !== '') {
+            $short = mb_substr($content, 0, 42);
+
+            return mb_strlen($content) > 42 ? $short . '...' : $short;
+        }
+
+        return sprintf('Comment #%d', (int) ($this->id ?? 0));
+    }
+
 }
