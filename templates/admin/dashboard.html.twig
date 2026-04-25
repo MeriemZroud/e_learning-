@@ -1,91 +1,16 @@
-{% extends 'base.html.twig' %}
+{% extends '@EasyAdmin/page/content.html.twig' %}
 
-{% block title %}Admin Dashboard{% endblock %}
-
-{% block stylesheets %}
-    {{ parent() }}
-    <link rel="stylesheet" href="{{ asset('styles/admin-theme.css') }}">
+{% block content_title %}
+    Dashboard
 {% endblock %}
 
-{% block body %}
-<main class="student-home admin-dashboard-page">
-    <div class="student-home__container">
-        <header class="student-topbar">
-            <a class="student-logo" href="{{ path('app_admin_dashboard') }}">LearnWay</a>
-            <nav class="student-nav" aria-label="Admin navigation">
-                <a href="{{ path('app_admin_dashboard') }}" class="is-active">Dashboard</a>
-                <a href="{{ usersUrl }}">Users</a>
-                <a href="{{ coursesUrl }}">Courses</a>
-                <a href="{{ submissionsUrl }}">Submissions</a>
-                <a href="{{ forumPostsUrl }}">Forum posts</a>
-                <a href="{{ forumCommentsUrl }}">Comments</a>
-                <a href="{{ forumRatingsUrl }}">Ratings</a>
-                <a href="{{ reclamationsUrl }}">Reclamations</a>
-                <a href="{{ notificationsUrl }}">Notifications</a>
-                <a href="{{ profileUrl }}">Profile</a>
-                <a href="{{ path('app_logout') }}">Logout</a>
-            </nav>
-            <div class="student-topbar__actions">
-                <div class="student-user">
-                    {% if app.user and app.user.profileImage %}
-                        <img class="student-user__avatar student-user__avatar-image" src="{{ asset('uploads/profile/' ~ app.user.profileImage) }}" alt="{{ admin_name }} avatar">
-                    {% else %}
-                        <span class="student-user__avatar">{{ admin_name|slice(0, 1)|upper }}</span>
-                    {% endif %}
-                    <span class="student-user__name">{{ admin_name }}</span>
-                </div>
+{% block page_actions %}
+    <a class="btn btn-primary" href="{{ usersUrl }}">Open admin management</a>
+{% endblock %}
 
-                <div class="student-notifications">
-                    <button
-                        class="student-notifications__button"
-                        type="button"
-                        aria-label="Notifications"
-                        aria-expanded="false"
-                        id="notifications-toggle"
-                    >
-                        <span class="student-notifications__emoji" aria-hidden="true">
-                            <svg class="student-notifications__icon" viewBox="0 0 24 24" fill="none" focusable="false">
-                                <path d="M15 17H9m9-1V11a6 6 0 10-12 0v5l-2 2h16l-2-2zm-8 2a2 2 0 104 0" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"/>
-                            </svg>
-                        </span>
-                        {% if unreadNotifications is not empty %}
-                            <span class="student-notifications__badge">{{ unreadNotifications|length }}</span>
-                        {% endif %}
-                    </button>
-
-                    <section class="student-notifications-panel" id="notifications-panel" aria-hidden="true">
-                        <div class="student-notifications-panel__header">
-                            <span class="student-notifications-panel__title">Notifications</span>
-                            <span class="student-notifications-panel__count">{{ unreadNotifications|length }} new</span>
-                        </div>
-                        <div class="student-notifications-panel__list">
-                            {% for notification in unreadNotifications %}
-                                <article class="student-notifications-panel__item">
-                                    <strong>{{ notification.type|default('info')|replace({'_': ' '})|title }}</strong>
-                                    <p>{{ notification.message }}</p>
-                                    <small>{{ notification.createdAt ? notification.createdAt|date('d/m/Y H:i') : '' }}</small>
-                                </article>
-                            {% else %}
-                                <article class="student-notifications-panel__item student-notifications-panel__item--empty">
-                                    <p>No new notifications.</p>
-                                </article>
-                            {% endfor %}
-                        </div>
-                    </section>
-                </div>
-            </div>
-        </header>
-
-        <section class="student-profile-hero admin-dashboard-hero">
-            <div>
-                <p class="student-profile-hero__kicker">Admin panel</p>
-                <h1>Welcome back, {{ admin_name }}</h1>
-                <p>Manage users, reclamations, and platform activity from one professional dashboard.</p>
-            </div>
-            <a class="student-btn student-btn--primary" href="{{ usersUrl }}">Open admin management</a>
-        </section>
-
-        <section class="student-section admin-dashboard-section">
+{% block main %}
+    <section class="admin-dashboard-section">
+        <div class="admin-dashboard-overview">
             <div class="admin-dashboard-stats">
                 <article class="admin-dashboard-stat">
                     <span>Total users</span>
@@ -116,97 +41,175 @@
                     <strong>{{ stats.reclamations }}</strong>
                 </article>
                 <article class="admin-dashboard-stat">
+                    <span>Urgent reclamations</span>
+                    <strong>{{ stats.urgentReclamations }}</strong>
+                </article>
+                <article class="admin-dashboard-stat">
                     <span>Unread notifications</span>
                     <strong>{{ stats.unreadNotifications }}</strong>
                 </article>
             </div>
 
-            <div class="admin-dashboard-actions">
-                <a class="admin-dashboard-action" href="{{ usersUrl }}">
-                    <h3>Manage users</h3>
-                    <p>Create, edit and monitor all user accounts.</p>
-                </a>
-                <a class="admin-dashboard-action" href="{{ coursesUrl }}">
-                    <h3>Manage courses</h3>
-                    <p>Publish, update and organize course content.</p>
-                </a>
-                <a class="admin-dashboard-action" href="{{ submissionsUrl }}">
-                    <h3>Manage submissions</h3>
-                    <p>Review quiz submissions from students quickly.</p>
-                </a>
-                <a class="admin-dashboard-action" href="{{ forumPostsUrl }}">
-                    <h3>Manage forum posts</h3>
-                    <p>Moderate and organize student forum posts.</p>
-                </a>
-                <a class="admin-dashboard-action" href="{{ forumCommentsUrl }}">
-                    <h3>Manage comments</h3>
-                    <p>Review replies and threaded discussion quality.</p>
-                </a>
-                <a class="admin-dashboard-action" href="{{ forumRatingsUrl }}">
-                    <h3>Manage ratings</h3>
-                    <p>Track ratings and feedback on forum content.</p>
-                </a>
-                <a class="admin-dashboard-action" href="{{ reclamationsUrl }}">
-                    <h3>Manage reclamations</h3>
-                    <p>Review and process submitted reclamations quickly.</p>
-                </a>
-                <a class="admin-dashboard-action" href="{{ notificationsUrl }}">
-                    <h3>View notifications</h3>
-                    <p>Track system alerts and unread admin notifications.</p>
-                </a>
-                <a class="admin-dashboard-action" href="{{ profileUrl }}">
-                    <h3>Edit profile</h3>
-                    <p>Update your personal information and avatar.</p>
-                </a>
+        </div>
+
+        <div class="admin-dashboard-insights-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;align-items:start;">
+            <div class="admin-dashboard-prediction-panel admin-dashboard-ai-panel" style="margin-top:0;width:auto;">
+                <div class="admin-dashboard-ai-panel__header">
+                    <div>
+                        <p class="student-profile-hero__kicker">AI prediction</p>
+                        <h2>Future number of users</h2>
+                    </div>
+                    <div class="admin-dashboard-prediction-panel__value">
+                        {{ userGrowthPrediction.projectedTotalIn6Months|default(stats.users) }} users in 6 months
+                    </div>
+                </div>
+
+                <div class="admin-dashboard-prediction-panel__chart-wrap">
+                    <canvas id="userGrowthPredictionChart" width="260" height="140" aria-label="User growth prediction chart" role="img"></canvas>
+                </div>
             </div>
-        </section>
-    </div>
 
+            <div class="admin-dashboard-role-chart" style="margin-top:0;width:auto;">
+                <div class="admin-dashboard-ai-panel" style="margin-top:0;">
+                    <div class="admin-dashboard-ai-panel__header">
+                        <div>
+                            <p class="student-profile-hero__kicker">User distribution</p>
+                            <h2>Teachers, Students, Admins</h2>
+                        </div>
+                    </div>
+
+                    <div class="admin-dashboard-role-chart__canvas-wrap">
+                        <canvas id="userRolePieChart" width="140" height="140" aria-label="User roles pie chart" role="img"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-dashboard-ai-panel">
+            <div class="admin-dashboard-ai-panel__header">
+                <div>
+                    <p class="student-profile-hero__kicker">AI recommendations</p>
+                    <h2>Reclamations to process first</h2>
+                </div>
+                <a class="btn btn-secondary" href="{{ reclamationsUrl }}">Open prioritized list</a>
+            </div>
+
+            <div class="admin-dashboard-ai-list">
+                {% for reclamation in aiRecommendations %}
+                    <article class="admin-dashboard-ai-item">
+                        <div>
+                            <strong>#{{ reclamation.id }} - {{ reclamation.priorityLabel }}</strong>
+                            <p>
+                                {{ reclamation.message|striptags|slice(0, 120) }}
+                                {% if reclamation.message|length > 120 %}...{% endif %}
+                            </p>
+                        </div>
+                        <span class="admin-dashboard-ai-score">{{ reclamation.priorityScore }}/100</span>
+                    </article>
+                {% else %}
+                    <article class="admin-dashboard-ai-item admin-dashboard-ai-item--empty">
+                        <p>No reclamation available for AI prioritization.</p>
+                    </article>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const notificationsToggle = document.getElementById('notifications-toggle');
-            const notificationsPanel = document.getElementById('notifications-panel');
+        document.addEventListener('DOMContentLoaded', function () {
+            const predictionCanvas = document.getElementById('userGrowthPredictionChart');
+            const chartCanvas = document.getElementById('userRolePieChart');
 
-            if (notificationsToggle && notificationsPanel) {
-                const closePanel = function() {
-                    notificationsPanel.classList.remove('is-visible');
-                    notificationsPanel.setAttribute('aria-hidden', 'true');
-                    notificationsToggle.setAttribute('aria-expanded', 'false');
-                };
-
-                const openPanel = function() {
-                    notificationsPanel.classList.add('is-visible');
-                    notificationsPanel.setAttribute('aria-hidden', 'false');
-                    notificationsToggle.setAttribute('aria-expanded', 'true');
-                };
-
-                notificationsToggle.addEventListener('click', function(event) {
-                    event.stopPropagation();
-
-                    if (notificationsPanel.classList.contains('is-visible')) {
-                        closePanel();
-
-                        return;
+            if (predictionCanvas) {
+                new Chart(predictionCanvas, {
+                    type: 'line',
+                    data: {
+                        labels: {{ userGrowthPrediction.labels|default([])|json_encode|raw }},
+                        datasets: [{
+                            label: 'Projected users',
+                            data: {{ userGrowthPrediction.predictedTotals|default([])|json_encode|raw }},
+                            borderColor: '#2fa9af',
+                            backgroundColor: 'rgba(77, 187, 192, 0.16)',
+                            fill: true,
+                            tension: 0.35,
+                            pointRadius: 3,
+                            pointHoverRadius: 5
+                        }]
+                    },
+                    options: {
+                        responsive: false,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function (context) {
+                                        return context.raw + ' users';
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                ticks: {
+                                    maxRotation: 0,
+                                    autoSkip: true
+                                },
+                                grid: {
+                                    display: false
+                                }
+                            },
+                            y: {
+                                beginAtZero: false,
+                                grid: {
+                                    color: 'rgba(191, 230, 229, 0.45)'
+                                }
+                            }
+                        }
                     }
-
-                    openPanel();
                 });
+            }
 
-                notificationsPanel.addEventListener('click', function(event) {
-                    event.stopPropagation();
-                });
+            if (chartCanvas) {
+                const chartData = [
+                    {{ userRoleChart.teachers|default(0) }},
+                    {{ userRoleChart.students|default(0) }},
+                    {{ userRoleChart.admins|default(0) }}
+                ];
 
-                document.addEventListener('click', function() {
-                    closePanel();
-                });
-
-                document.addEventListener('keydown', function(event) {
-                    if (event.key === 'Escape') {
-                        closePanel();
+                new Chart(chartCanvas, {
+                    type: 'pie',
+                    data: {
+                        labels: ['Teachers', 'Students', 'Admins'],
+                        datasets: [{
+                            data: chartData,
+                            backgroundColor: ['#36a2eb', '#4bc0c0', '#ff6384'],
+                            borderColor: '#ffffff',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: false,
+                        maintainAspectRatio: true,
+                        aspectRatio: 1,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function (context) {
+                                        return context.label + ': ' + context.raw;
+                                    }
+                                }
+                            }
+                        }
                     }
                 });
             }
         });
     </script>
-</main>
 {% endblock %}

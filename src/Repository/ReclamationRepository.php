@@ -30,6 +30,31 @@ class ReclamationRepository extends ServiceEntityRepository
     //            ->getResult()
     //        ;
     //    }
+    
+    /**
+     * @return Reclamation[]
+     */
+    public function findAllOrderedByPriority(): array
+    {
+        return $this->createQueryBuilder('r')
+            ->orderBy('r.priority_score', 'DESC')
+            ->addOrderBy('r.created_at', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * @return Reclamation[]
+     */
+    public function findTopPriorityRecommendations(int $limit = 5): array
+    {
+        return $this->createQueryBuilder('r')
+            ->orderBy('r.priority_score', 'DESC')
+            ->addOrderBy('r.created_at', 'DESC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
 
     //    public function findOneBySomeField($value): ?Reclamation
     //    {

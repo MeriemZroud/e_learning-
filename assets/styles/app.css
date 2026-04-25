@@ -679,7 +679,7 @@ a {
     transform: translateY(-8px) scale(0.98);
     transform-origin: top right;
     transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
-    z-index: 120;
+    z-index: 1000;
 }
 
 .student-notifications-panel::before {
@@ -1242,6 +1242,21 @@ a {
     background: linear-gradient(180deg, var(--primary), var(--primary-dark));
     color: #fff;
     box-shadow: 0 12px 24px rgba(77, 187, 192, 0.26);
+}
+
+.student-btn--icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.student-btn__icon {
+    width: 1rem;
+    height: 1rem;
+    display: block;
 }
 
 .student-hero__visual {

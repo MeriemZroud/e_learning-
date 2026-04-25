@@ -454,11 +454,83 @@ body.ea,
     padding: 1.15rem;
 }
 
+.admin-dashboard-overview {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(240px, 0.9fr);
+    gap: 0.8rem;
+    align-items: start;
+    margin-bottom: 0.8rem;
+}
+
+.admin-dashboard-insights-grid {
+    display: grid !important;
+    grid-template-columns: minmax(320px, 1fr) minmax(320px, 1fr) !important;
+    gap: 0.8rem;
+    align-items: start;
+    margin-bottom: 0.8rem;
+}
+
+.admin-dashboard-insights-grid > * {
+    flex: initial;
+    min-width: 0;
+}
+
+.admin-dashboard-prediction-panel,
+.admin-dashboard-role-chart {
+    margin-top: 0;
+    width: auto !important;
+    max-width: none !important;
+}
+
+.admin-dashboard-insights-grid .admin-dashboard-ai-panel {
+    margin-top: 0;
+    height: 100%;
+}
+
 .admin-dashboard-stats {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
     gap: 0.8rem;
-    margin-bottom: 1rem;
+    margin-bottom: 0;
+}
+
+.admin-dashboard-role-chart .admin-dashboard-ai-panel {
+    margin-top: 0;
+}
+
+.admin-dashboard-role-chart__canvas-wrap {
+    width: 140px;
+    max-width: 140px;
+    height: 140px;
+    margin: 0 auto;
+}
+
+.admin-dashboard-role-chart__canvas-wrap canvas {
+    display: block;
+    width: 140px !important;
+    height: 140px !important;
+}
+
+.admin-dashboard-prediction-panel__value {
+    font-size: 0.82rem;
+    font-weight: 800;
+    color: var(--lw-primary-dark);
+    background: rgba(77, 187, 192, 0.12);
+    border-radius: 999px;
+    padding: 0.35rem 0.65rem;
+    white-space: nowrap;
+}
+
+.admin-dashboard-prediction-panel__chart-wrap {
+    width: 100%;
+    max-width: 360px;
+    margin: 0 auto;
+}
+
+.admin-dashboard-prediction-panel__chart-wrap canvas {
+    display: block;
+    width: 100% !important;
+    height: auto !important;
 }
 
 .admin-dashboard-stat {
@@ -518,9 +590,96 @@ body.ea,
     box-shadow: 0 16px 38px rgba(36, 87, 89, 0.16);
 }
 
+.admin-dashboard-ai-panel {
+    margin-top: 0.7rem;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(243, 250, 250, 0.94));
+    border: 1px solid rgba(191, 230, 229, 0.85);
+    border-radius: 16px;
+    padding: 0.75rem;
+    box-shadow: var(--lw-shadow);
+}
+
+.admin-dashboard-ai-panel__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.7rem;
+    margin-bottom: 0.6rem;
+}
+
+.admin-dashboard-ai-panel__header h2 {
+    margin: 0.1rem 0 0;
+    font-size: 1rem;
+    color: var(--lw-primary-dark);
+}
+
+.admin-dashboard-ai-list {
+    display: grid;
+    gap: 0.5rem;
+}
+
+.admin-dashboard-ai-item {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.65rem 0.8rem;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(191, 230, 229, 0.75);
+}
+
+.admin-dashboard-ai-item strong {
+    display: block;
+    color: var(--lw-primary-dark);
+    margin-bottom: 0.15rem;
+    font-size: 0.92rem;
+}
+
+.admin-dashboard-ai-item p {
+    margin: 0;
+    color: var(--lw-muted);
+    font-size: 0.82rem;
+    line-height: 1.35;
+}
+
+.admin-dashboard-ai-score {
+    min-width: 64px;
+    text-align: center;
+    font-weight: 800;
+    font-size: 0.78rem;
+    color: #0f766e;
+    background: rgba(77, 187, 192, 0.12);
+    border-radius: 999px;
+    padding: 0.3rem 0.55rem;
+}
+
+.admin-dashboard-ai-item--empty {
+    justify-content: center;
+    color: var(--lw-muted);
+}
+
 @media (max-width: 900px) {
     .admin-profile-layout {
         grid-template-columns: 1fr;
+    }
+
+    .admin-dashboard-overview {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-dashboard-insights-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .admin-dashboard-role-chart__canvas-wrap {
+        width: 125px;
+        max-width: 125px;
+        height: 125px;
+    }
+
+    .admin-dashboard-prediction-panel__chart-wrap {
+        max-width: 100%;
     }
 
     .admin-profile-grid {
@@ -530,5 +689,15 @@ body.ea,
     .admin-dashboard-stats,
     .admin-dashboard-actions {
         grid-template-columns: 1fr;
+    }
+
+    .admin-dashboard-ai-panel__header,
+    .admin-dashboard-ai-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .admin-dashboard-ai-score {
+        width: auto;
     }
 }

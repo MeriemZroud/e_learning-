@@ -17,6 +17,9 @@ class Reclamation
     public const STATUS_IN_PROGRESS = 'IN_PROGRESS';
     public const STATUS_RESOLVED = 'RESOLVED';
     public const STATUS_REJECTED = 'REJECTED';
+    public const PRIORITY_URGENT = 'URGENT';
+    public const PRIORITY_NORMAL = 'NORMAL';
+    public const PRIORITY_LOW = 'LOW';
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -88,6 +91,61 @@ class Reclamation
         ];
 
         $this->status = $aliases[$normalized] ?? self::STATUS_IN_PROGRESS;
+
+        return $this;
+    }
+
+    #[ORM\Column(type: 'string', length: 20, options: ['default' => 'NORMAL'])]
+    private string $priority = self::PRIORITY_NORMAL;
+
+    public function getPriority(): string
+    {
+        return $this->priority;
+    }
+
+    public function setPriority(?string $priority): self
+    {
+        if ($priority === null || $priority === '') {
+            $this->priority = self::PRIORITY_NORMAL;
+
+            return $this;
+        }
+
+        $normalized = strtoupper(trim($priority));
+        $aliases = [
+            'URGENT' => self::PRIORITY_URGENT,
+            'HIGH' => self::PRIORITY_URGENT,
+            'NORMAL' => self::PRIORITY_NORMAL,
+            'MEDIUM' => self::PRIORITY_NORMAL,
+            'LOW' => self::PRIORITY_LOW,
+            'FAIBLE' => self::PRIORITY_LOW,
+        ];
+
+        $this->priority = $aliases[$normalized] ?? self::PRIORITY_NORMAL;
+
+        return $this;
+    }
+
+    public function getPriorityLabel(): string
+    {
+        return match ($this->priority) {
+            self::PRIORITY_URGENT => 'Urgent',
+            self::PRIORITY_LOW => 'Faible',
+            default => 'Normal',
+        };
+    }
+
+    #[ORM\Column(type: 'integer', options: ['default' => 50])]
+    private int $priority_score = 50;
+
+    public function getPriorityScore(): int
+    {
+        return $this->priority_score;
+    }
+
+    public function setPriorityScore(?int $priorityScore): self
+    {
+        $this->priority_score = max(0, min(100, (int) ($priorityScore ?? 50)));
 
         return $this;
     }
