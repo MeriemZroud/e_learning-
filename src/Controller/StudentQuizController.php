@@ -10,6 +10,7 @@ use App\Repository\CourseRepository;
 use App\Repository\CourseQuizRepository;
 use App\Repository\CourseQuizSubmissionRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Nucleos\DompdfBundle\Wrapper\DompdfWrapperInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -19,6 +20,11 @@ use Symfony\Component\Routing\Attribute\Route;
 
 class StudentQuizController extends AbstractController
 {
+    public function __construct(
+        private readonly DompdfWrapperInterface $dompdfWrapper,
+    ) {
+    }
+
     #[Route('/student/quizzes', name: 'app_student_quiz_index', methods: ['GET'])]
     public function index(Request $request, CourseQuizRepository $quizRepository, CourseQuizSubmissionRepository $submissionRepository): Response
     {
@@ -63,7 +69,76 @@ class StudentQuizController extends AbstractController
             'course' => $course,
             'quizzes' => $quizzes,
             'submission_map' => $submissionMap,
+            'lesson_summary' => null,
         ]);
+    }
+
+    #[Route('/student/courses/{id}/lesson-summary', name: 'app_student_course_lesson_summary', methods: ['GET'])]
+    public function lessonSummary(int $id, CourseRepository $courseRepository, CourseQuizRepository $quizRepository, CourseQuizSubmissionRepository $submissionRepository, HttpClientInterface $httpClient): Response
+    {
+        $student = $this->requireStudentUser();
+        $course = $courseRepository->findOneBy([
+            'id' => $id,
+            'is_published' => true,
+        ]);
+
+        if (!$course instanceof Course) {
+            throw $this->createNotFoundException('Course not found.');
+        }
+
+        $quizzes = $quizRepository->findPublishedByCourse($course);
+        $submissionMap = [];
+        foreach ($quizzes as $quiz) {
+            $submissionMap[(int) $quiz->getId()] = $submissionRepository->findOneByQuizAndStudent($quiz, $student);
+        }
+
+        $lessonSummary = $this->generateLessonSummaryData($course, $quizzes, $httpClient);
+
+        return $this->render('dashboard/student_course_detail.html.twig', [
+            'student_name' => $this->getStudentName($student),
+            'course' => $course,
+            'quizzes' => $quizzes,
+            'submission_map' => $submissionMap,
+            'lesson_summary' => $lessonSummary,
+        ]);
+    }
+
+    #[Route('/student/courses/{id}/lesson-summary/pdf', name: 'app_student_course_lesson_summary_pdf', methods: ['GET'])]
+    public function downloadLessonSummaryPdf(int $id, CourseRepository $courseRepository, CourseQuizRepository $quizRepository, HttpClientInterface $httpClient): Response
+    {
+        $this->requireStudentUser();
+
+        $course = $courseRepository->findOneBy([
+            'id' => $id,
+            'is_published' => true,
+        ]);
+
+        if (!$course instanceof Course) {
+            throw $this->createNotFoundException('Course not found.');
+        }
+
+        $quizzes = $quizRepository->findPublishedByCourse($course);
+        $lessonSummary = $this->generateLessonSummaryData($course, $quizzes, $httpClient);
+        $generatedAt = new \DateTimeImmutable();
+
+        $html = $this->renderView('dashboard/student_lesson_summary.pdf.twig', [
+            'course' => $course,
+            'lesson_summary' => $lessonSummary,
+            'generated_at' => $generatedAt,
+        ]);
+
+        $pdfContent = $this->dompdfWrapper->getPdf($html, [
+            'defaultFont' => 'DejaVu Sans',
+        ]);
+
+        $safeTitle = preg_replace('/[^a-z0-9\-]+/i', '-', (string) $course->getTitle()) ?: 'lesson';
+        $filename = sprintf('lesson-summary-%s-%s.pdf', trim((string) $safeTitle, '-'), $generatedAt->format('Ymd-His'));
+
+        $response = new Response($pdfContent);
+        $response->headers->set('Content-Type', 'application/pdf');
+        $response->headers->set('Content-Disposition', sprintf('attachment; filename="%s"', $filename));
+
+        return $response;
     }
 
     #[Route('/student/courses/{id}/chatbot', name: 'app_student_course_chatbot', methods: ['POST'])]
@@ -263,6 +338,145 @@ class StudentQuizController extends AbstractController
         $contextLines[] = 'Assistant:';
 
         return implode("\n", $contextLines);
+    }
+
+    /**
+     * @param array<int, CourseQuiz> $quizzes
+     * @return array{summary:string,keyPoints:array<int,string>,model:string}
+     */
+    private function generateLessonSummaryData(Course $course, array $quizzes, HttpClientInterface $httpClient): array
+    {
+        $apiKey = (string) ($_ENV['HUGGING_FACE_API_KEY'] ?? $_SERVER['HUGGING_FACE_API_KEY'] ?? getenv('HUGGING_FACE_API_KEY') ?: '');
+        $model = trim((string) ($_ENV['HUGGING_FACE_MODEL_CHAPTER_SUMMARY'] ?? $_SERVER['HUGGING_FACE_MODEL_CHAPTER_SUMMARY'] ?? getenv('HUGGING_FACE_MODEL_CHAPTER_SUMMARY') ?: ($_ENV['HUGGING_FACE_MODEL'] ?? 'Qwen/Qwen2.5-7B-Instruct')));
+
+        $fallback = $this->buildFallbackLessonSummaryData($course, $quizzes);
+        if ($apiKey === '' || $model === '') {
+            return $fallback + ['model' => 'fallback-local'];
+        }
+
+        $source = $this->buildLessonSourceText($course, $quizzes);
+        $prompt = "Tu es un assistant pédagogique. Retourne uniquement du JSON valide avec cette forme: "
+            . '{"summary":"...","keyPoints":["...","...","..."]}. '
+            . "La summary doit être un résumé court de la leçon en français (80-140 mots). "
+            . "keyPoints doit contenir 4 à 6 points clés de révision, concis et actionnables. "
+            . "Leçon:\n" . $source;
+
+        try {
+            $result = $this->requestChatbotCompletion($httpClient, $apiKey, $model, $prompt);
+            $content = $this->extractChatbotAnswer($result);
+
+            if ($content === '') {
+                return $fallback + ['model' => 'fallback-local'];
+            }
+
+            $payload = $this->decodeSummaryPayload($content);
+            $summary = trim((string) ($payload['summary'] ?? ''));
+            $rawPoints = is_array($payload['keyPoints'] ?? null) ? $payload['keyPoints'] : [];
+            $keyPoints = [];
+
+            foreach ($rawPoints as $point) {
+                if (!is_string($point)) {
+                    continue;
+                }
+
+                $value = trim(strip_tags($point));
+                if ($value !== '') {
+                    $keyPoints[] = $value;
+                }
+
+                if (count($keyPoints) >= 6) {
+                    break;
+                }
+            }
+
+            if ($summary === '' || count($keyPoints) < 3) {
+                return $fallback + ['model' => 'fallback-local'];
+            }
+
+            return [
+                'summary' => $summary,
+                'keyPoints' => $keyPoints,
+                'model' => $model,
+            ];
+        } catch (\Throwable) {
+            return $fallback + ['model' => 'fallback-local'];
+        }
+    }
+
+    /**
+     * @param array<int, CourseQuiz> $quizzes
+     */
+    private function buildLessonSourceText(Course $course, array $quizzes): string
+    {
+        $quizHints = [];
+        foreach (array_slice($quizzes, 0, 5) as $quiz) {
+            $hint = trim((string) ($quiz->getSourceSummary() ?: $quiz->getTitle()));
+            if ($hint !== '') {
+                $quizHints[] = '- ' . $hint;
+            }
+        }
+
+        return implode("\n", [
+            'Titre du cours: ' . (string) ($course->getTitle() ?? ''),
+            'Description: ' . ((string) ($course->getDescription() ?? '') !== '' ? (string) $course->getDescription() : 'Non fournie.'),
+            'Ressource vidéo: ' . (string) ($course->getVideoUrl() ?? 'Non fournie.'),
+            'PDF associé: ' . ($course->getPdfFile() ? ('uploads/courses/pdf/' . $course->getPdfFile()) : 'Aucun'),
+            'Points évalués dans les quiz:',
+            !empty($quizHints) ? implode("\n", $quizHints) : '- Aucun quiz publié pour ce cours.',
+        ]);
+    }
+
+    private function decodeSummaryPayload(string $content): array
+    {
+        $clean = trim(str_replace(["```json", "```"], '', $content));
+        $decoded = json_decode($clean, true);
+        if (is_array($decoded)) {
+            return $decoded;
+        }
+
+        if (preg_match('/\{.*\}/s', $clean, $matches) === 1) {
+            $decoded = json_decode($matches[0], true);
+            return is_array($decoded) ? $decoded : [];
+        }
+
+        return [];
+    }
+
+    /**
+     * @param array<int, CourseQuiz> $quizzes
+     * @return array{summary:string,keyPoints:array<int,string>}
+     */
+    private function buildFallbackLessonSummaryData(Course $course, array $quizzes): array
+    {
+        $title = trim((string) ($course->getTitle() ?? 'Cette leçon'));
+        $description = trim((string) ($course->getDescription() ?? ''));
+        $quizCount = count($quizzes);
+
+        $summary = $description !== ''
+            ? sprintf(
+                'Cette leçon "%s" présente les notions essentielles du cours et les applique dans un contexte pratique. Elle met l\'accent sur la compréhension des concepts clés et la préparation aux évaluations. Utilise la vidéo, le support PDF et les quiz pour renforcer progressivement ta maîtrise du sujet.',
+                $title
+            )
+            : sprintf(
+                'Cette leçon "%s" te guide sur les notions principales à retenir. L\'objectif est de comprendre la base théorique, de repérer les points importants pour l\'examen et de t\'entraîner avec les ressources disponibles du cours.',
+                $title
+            );
+
+        $keyPoints = [
+            'Identifier et mémoriser les définitions principales de la leçon.',
+            'Relier chaque concept à un exemple concret vu dans le cours.',
+            'Revoir la vidéo en notant les étapes ou règles importantes.',
+            'Faire les quiz publiés pour vérifier ta compréhension immédiate.',
+        ];
+
+        if ($quizCount > 0) {
+            $keyPoints[] = sprintf('Planifier une révision active sur les %d quiz disponibles.', $quizCount);
+        }
+
+        return [
+            'summary' => $summary,
+            'keyPoints' => $keyPoints,
+        ];
     }
 
     private function buildFallbackChatbotAnswer(Course $course, string $message): string

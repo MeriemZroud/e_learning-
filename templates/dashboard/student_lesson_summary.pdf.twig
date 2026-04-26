@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Résumé de leçon</title>
+    <style>
+        body {
+            font-family: DejaVu Sans, sans-serif;
+            color: #102027;
+            font-size: 12px;
+            line-height: 1.45;
+            margin: 24px;
+        }
+
+        .header {
+            border-bottom: 2px solid #4bc0c0;
+            padding-bottom: 10px;
+            margin-bottom: 16px;
+        }
+
+        .title {
+            margin: 0;
+            font-size: 22px;
+            color: #1a474d;
+        }
+
+        .meta {
+            margin-top: 4px;
+            color: #4f6a70;
+            font-size: 11px;
+        }
+
+        .card {
+            border: 1px solid #d8ecec;
+            border-radius: 12px;
+            background: #f7fbfb;
+            padding: 12px;
+            margin-bottom: 14px;
+        }
+
+        h2 {
+            margin: 0 0 8px;
+            color: #1a474d;
+            font-size: 14px;
+        }
+
+        ul {
+            margin: 0;
+            padding-left: 18px;
+        }
+
+        li {
+            margin-bottom: 6px;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1 class="title">Résumé automatique de leçon</h1>
+        <div class="meta">Cours: {{ course.title }}</div>
+        <div class="meta">Généré le {{ generated_at|date('d/m/Y H:i') }}</div>
+    </header>
+
+    <section class="card">
+        <h2>Résumé court</h2>
+        <p>{{ lesson_summary.summary }}</p>
+    </section>
+
+    <section class="card">
+        <h2>Points clés de révision</h2>
+        <ul>
+            {% for point in lesson_summary.keyPoints %}
+                <li>{{ point }}</li>
+            {% endfor %}
+        </ul>
+    </section>
+
+    <section class="card">
+        <h2>Informations</h2>
+        <p>Modèle utilisé: {{ lesson_summary.model }}</p>
+        <p>Plateforme: LearnWay</p>
+    </section>
+</body>
+</html>

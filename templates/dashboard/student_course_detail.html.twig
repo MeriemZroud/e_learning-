@@ -6,7 +6,7 @@
 {% set chatbotToken = csrf_token('student_course_chatbot_' ~ course.id) %}
 {% set chatbotAvatar = asset('chatbot.png') %}
 {% set userAvatar = (app.user and app.user.profileImage) ? asset('uploads/profile/' ~ app.user.profileImage) : asset('profil.jpg') %}
-<main class="student-home student-forum-page">
+<main class="student-home student-forum-page student-course-detail-page">
     <div class="student-home__container">
         <header class="student-topbar">
             <a class="student-logo" href="{{ path('app_student_dashboard') }}">LearnWay</a>
@@ -75,7 +75,43 @@
             </div>
         </section>
 
-        <section class="student-section">
+        <div class="student-course-two-columns">
+        <section class="student-section student-section--soft student-course-two-columns__summary">
+            <div class="student-section__head">
+                <h2>Automatic Lesson Summary</h2>
+            </div>
+
+            <article class="student-related-card">
+                <div class="student-related-card__content">
+                    <p class="student-related-card__tag">IA Study Helper</p>
+                    <h3>Short Summary + Key Revision Points</h3>
+                    <p>Generate a condensed version of this lesson and key points to review before the quiz.</p>
+
+                    <div class="student-live-course__links">
+                        <a class="student-btn student-btn--primary" href="{{ path('app_student_course_lesson_summary', {id: course.id}) }}">Generate AI Summary</a>
+                        <a class="student-btn" href="{{ path('app_student_course_lesson_summary_pdf', {id: course.id}) }}">Download PDF</a>
+                    </div>
+
+                    {% if lesson_summary %}
+                        <div style="margin-top:1rem;padding:0.9rem 1rem;border-radius:14px;background:#f2fbfb;border:1px solid #d8ecec;">
+                            <p class="student-related-card__tag" style="margin-bottom:0.4rem;">Summary</p>
+                            <p style="margin-bottom:0.8rem;">{{ lesson_summary.summary }}</p>
+
+                            <p class="student-related-card__tag" style="margin-bottom:0.4rem;">Key Revision Points</p>
+                            <ul style="margin:0 0 0 1rem;padding:0;display:grid;gap:0.35rem;">
+                                {% for point in lesson_summary.keyPoints %}
+                                    <li>{{ point }}</li>
+                                {% endfor %}
+                            </ul>
+
+                            <p style="margin-top:0.8rem;font-size:0.86rem;color:#4f6a70;">Model: {{ lesson_summary.model }}</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </article>
+        </section>
+
+        <section class="student-section student-course-two-columns__quizzes">
             <div class="student-section__head">
                 <h2>Course quizzes</h2>
             </div>
@@ -113,6 +149,7 @@
                 </div>
             {% endif %}
         </section>
+        </div>
 
         <div
             class="student-course-chatbot"

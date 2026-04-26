@@ -9,6 +9,7 @@ use App\Entity\CourseQuizSubmission;
 use App\Entity\ForumPost;
 use App\Entity\ForumComment;
 use App\Entity\ForumReview;
+use App\Entity\Reclamation as ReclamationEntity;
 use App\Repository\NotificationRepository;
 use App\Repository\ReclamationRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -21,8 +22,11 @@ use EasyCorp\Bundle\EasyAdminBundle\Config\UserMenu;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractDashboardController;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
 use EasyCorp\Bundle\EasyAdminBundle\Router\AdminUrlGenerator;
+use Nucleos\DompdfBundle\Wrapper\DompdfWrapperInterface;
 use Doctrine\DBAL\Types\Types;
+use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 #[AdminDashboard(routePath: '/admin', routeName: 'app_admin_dashboard')]
@@ -32,6 +36,7 @@ class DashboardController extends AbstractDashboardController
         private readonly NotificationRepository $notificationRepository,
         private readonly EntityManagerInterface $entityManager,
         private readonly ReclamationRepository $reclamationRepository,
+        private readonly DompdfWrapperInterface $dompdfWrapper,
     )
     {
     }
@@ -192,6 +197,7 @@ class DashboardController extends AbstractDashboardController
             'forumCommentsUrl' => $forumCommentsUrl,
             'forumRatingsUrl' => $forumRatingsUrl,
             'profileUrl' => $this->generateUrl('app_admin_profile'),
+            'aiReportDownloadUrl' => $this->generateUrl('app_admin_ai_report_download'),
             'aiRecommendations' => $aiRecommendations,
             'userRoleChart' => [
                 'admins' => $adminCount,
@@ -220,6 +226,164 @@ class DashboardController extends AbstractDashboardController
                 'unreadNotifications' => count($unreadNotifications),
             ],
         ]);
+    }
+
+    #[Route('/admin/ai-report/download', name: 'app_admin_ai_report_download', methods: ['GET'])]
+    public function downloadAiReport(): Response
+    {
+        $generatedAt = new \DateTimeImmutable();
+
+        $stats = [
+            'users' => (int) $this->entityManager->getRepository(User::class)->count([]),
+            'courses' => (int) $this->entityManager->getRepository(Course::class)->count([]),
+            'submissions' => (int) $this->entityManager->getRepository(CourseQuizSubmission::class)->count([]),
+            'forumPosts' => (int) $this->entityManager->getRepository(ForumPost::class)->count([]),
+            'forumComments' => (int) $this->entityManager->getRepository(ForumComment::class)->count([]),
+            'forumRatings' => (int) $this->entityManager->getRepository(ForumReview::class)->count([]),
+            'reclamations' => (int) $this->entityManager->getRepository(Reclamation::class)->count([]),
+            'urgentReclamations' => (int) $this->entityManager->getRepository(Reclamation::class)->count(['priority' => Reclamation::PRIORITY_URGENT]),
+        ];
+
+        $topReclamations = $this->reclamationRepository->findTopPriorityRecommendations(5);
+        $aiSummary = $this->generateAdminReportSummary($stats, $topReclamations);
+
+        $html = $this->renderView('admin/ai_report.pdf.twig', [
+            'generatedAt' => $generatedAt,
+            'stats' => $stats,
+            'topReclamations' => $topReclamations,
+            'aiSummary' => $aiSummary,
+        ]);
+
+        $pdfContent = $this->dompdfWrapper->getPdf($html, [
+            'defaultFont' => 'DejaVu Sans',
+        ]);
+
+        $filename = sprintf('admin-ai-report-%s.pdf', $generatedAt->format('Y-m-d-His'));
+        $response = new Response($pdfContent);
+        $response->headers->set('Content-Type', 'application/pdf');
+        $response->headers->set('Content-Disposition', sprintf('attachment; filename="%s"', $filename));
+
+        return $response;
+    }
+
+    /**
+     * @param array<string,int> $stats
+     * @param array<int,array<string,mixed>> $topReclamations
+     */
+    private function generateAdminReportSummary(array $stats, array $topReclamations): string
+    {
+        $apiKey = trim((string) ($_ENV['HUGGING_FACE_API_KEY'] ?? ''));
+        $model = trim((string) ($_ENV['HUGGING_FACE_MODEL_ADMIN_REPORT'] ?? ($_ENV['HUGGING_FACE_MODEL'] ?? 'Qwen/Qwen2.5-7B-Instruct')));
+
+        if ($apiKey === '' || $model === '') {
+            return $this->buildFallbackAdminReportSummary($stats);
+        }
+
+        $criticalMessages = array_map(
+            static function (mixed $item): string {
+                if ($item instanceof ReclamationEntity) {
+                    $priorityLabel = match ($item->getPriority()) {
+                        ReclamationEntity::PRIORITY_URGENT => 'Urgent',
+                        ReclamationEntity::PRIORITY_NORMAL => 'Normal',
+                        default => 'Low',
+                    };
+
+                    return sprintf(
+                        '#%s (%s/%s): %s',
+                        (string) ($item->getId() ?? '-'),
+                        $priorityLabel,
+                        (string) ((int) ($item->getPriorityScore() ?? 0)),
+                        mb_substr(trim(strip_tags((string) $item->getMessage())), 0, 180)
+                    );
+                }
+
+                if (is_array($item)) {
+                    return sprintf(
+                        '#%s (%s/%s): %s',
+                        (string) ($item['id'] ?? '-'),
+                        (string) ($item['priorityLabel'] ?? 'N/A'),
+                        (string) ($item['priorityScore'] ?? '0'),
+                        mb_substr(trim(strip_tags((string) ($item['message'] ?? ''))), 0, 180)
+                    );
+                }
+
+                return 'Reclamation data unavailable';
+            },
+            $topReclamations
+        );
+
+        $prompt = sprintf(
+            "R\u00e9dige un mini rapport ex\u00e9cutif en fran\u00e7ais (max 180 mots) pour un dashboard e-learning. " .
+            "Format demand\u00e9: 1 paragraphe synth\u00e8se + 3 recommandations d'action num\u00e9rot\u00e9es. " .
+            "Donn\u00e9es: Utilisateurs=%d, Cours=%d, Soumissions=%d, R\u00e9clamations=%d, R\u00e9clamations urgentes=%d. " .
+            "Top r\u00e9clamations: %s",
+            (int) ($stats['users'] ?? 0),
+            (int) ($stats['courses'] ?? 0),
+            (int) ($stats['submissions'] ?? 0),
+            (int) ($stats['reclamations'] ?? 0),
+            (int) ($stats['urgentReclamations'] ?? 0),
+            !empty($criticalMessages) ? implode(' | ', $criticalMessages) : 'Aucune'
+        );
+
+        try {
+            $client = HttpClient::create();
+            $response = $client->request('POST', 'https://router.huggingface.co/v1/chat/completions', [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $apiKey,
+                ],
+                'json' => [
+                    'model' => $model,
+                    'messages' => [
+                        [
+                            'role' => 'system',
+                            'content' => 'Tu es un assistant analyste de performance pour un LMS. R\u00e9ponse concise en fran\u00e7ais.',
+                        ],
+                        [
+                            'role' => 'user',
+                            'content' => $prompt,
+                        ],
+                    ],
+                    'temperature' => 0.2,
+                    'max_tokens' => 320,
+                ],
+                'timeout' => 30,
+            ]);
+
+            $payload = json_decode($response->getContent(false), true);
+            $content = trim((string) ($payload['choices'][0]['message']['content'] ?? ''));
+            if ($content === '') {
+                return $this->buildFallbackAdminReportSummary($stats);
+            }
+
+            return mb_substr(str_replace(["```markdown", '```'], '', $content), 0, 1800);
+        } catch (\Throwable) {
+            return $this->buildFallbackAdminReportSummary($stats);
+        }
+    }
+
+    /**
+     * @param array<string,int> $stats
+     */
+    private function buildFallbackAdminReportSummary(array $stats): string
+    {
+        $users = (int) ($stats['users'] ?? 0);
+        $courses = (int) ($stats['courses'] ?? 0);
+        $submissions = (int) ($stats['submissions'] ?? 0);
+        $reclamations = (int) ($stats['reclamations'] ?? 0);
+        $urgent = (int) ($stats['urgentReclamations'] ?? 0);
+
+        return sprintf(
+            "Synth\u00e8se: la plateforme compte %d utilisateurs actifs pour %d cours et %d soumissions enregistr\u00e9es. " .
+            "Le volume de r\u00e9clamations est de %d dont %d urgentes, ce qui n\u00e9cessite un suivi prioritaire des tickets critiques.\n\n" .
+            "1. Traiter les r\u00e9clamations urgentes en moins de 24h avec un suivi quotidien.\n" .
+            "2. Analyser les cours qui g\u00e9n\u00e8rent le plus de r\u00e9clamations pour corriger les causes racines.\n" .
+            "3. Mettre en place un reporting hebdomadaire automatique pour suivre la qualit\u00e9 de service.",
+            $users,
+            $courses,
+            $submissions,
+            $reclamations,
+            $urgent
+        );
     }
 
     public function configureDashboard(): Dashboard
