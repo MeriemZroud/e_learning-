@@ -4,6 +4,8 @@ namespace App\Controller\Admin;
 
 use App\Entity\Notification;
 use App\Entity\Reclamation;
+use App\Entity\User;
+use App\Service\NotifierEmailService;
 use Doctrine\ORM\EntityManagerInterface;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
@@ -22,6 +24,10 @@ use Symfony\Component\HttpFoundation\Response;
 
 class ReclamationCrudController extends AbstractCrudController
 {
+    public function __construct(private readonly NotifierEmailService $notifierEmailService)
+    {
+    }
+
     public static function getEntityFqcn(): string
     {
         return Reclamation::class;
@@ -119,6 +125,18 @@ class ReclamationCrudController extends AbstractCrudController
 
         $entityManager->persist($notification);
         $entityManager->flush();
+
+        if ($entityInstance->getUser() instanceof User) {
+            $this->notifierEmailService->send(
+                $entityInstance->getUser(),
+                sprintf('Reclamation #%d status updated', $entityInstance->getId()),
+                sprintf(
+                    'Your reclamation #%d status changed to %s.',
+                    $entityInstance->getId(),
+                    ucfirst(strtolower(str_replace('_', ' ', (string) $newStatus)))
+                )
+            );
+        }
     }
 
     public function analyzeAi(Request $request, EntityManagerInterface $entityManager): Response

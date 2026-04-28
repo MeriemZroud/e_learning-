@@ -9,6 +9,7 @@ use App\Form\ReclamationType;
 use App\Repository\NotificationRepository;
 use App\Repository\ReclamationRepository;
 use App\Repository\UserRepository;
+use App\Service\NotifierEmailService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -45,7 +46,7 @@ class ReclamationController extends AbstractController
 
     #[Route('/new', name: 'app_reclamation_new', methods: ['GET', 'POST'])]
     #[IsGranted('ROLE_STUDENT')]
-    public function new(Request $request, EntityManagerInterface $entityManager, UserRepository $userRepository, NotificationRepository $notificationRepository): Response
+    public function new(Request $request, EntityManagerInterface $entityManager, UserRepository $userRepository, NotificationRepository $notificationRepository, NotifierEmailService $notifierEmailService): Response
     {
         $user = $this->getUser();
         $reclamation = new Reclamation();
@@ -78,6 +79,14 @@ class ReclamationController extends AbstractController
                 $notification->setType('reclamation');
                 $notification->setIsRead(false);
                 $entityManager->persist($notification);
+
+                if ($admin instanceof User) {
+                    $notifierEmailService->send(
+                        $admin,
+                        'New reclamation submitted',
+                        sprintf('User %s submitted a new reclamation.', $senderName)
+                    );
+                }
             }
 
             $entityManager->flush();
@@ -113,7 +122,7 @@ class ReclamationController extends AbstractController
     }
 
     #[Route('/{id}/edit', name: 'app_reclamation_edit', methods: ['GET', 'POST'])]
-    public function edit(Request $request, Reclamation $reclamation, EntityManagerInterface $entityManager, NotificationRepository $notificationRepository): Response
+    public function edit(Request $request, Reclamation $reclamation, EntityManagerInterface $entityManager, NotificationRepository $notificationRepository, NotifierEmailService $notifierEmailService): Response
     {
         // Check if user can edit this reclamation
         if (!$this->isGranted('ROLE_ADMIN') && $reclamation->getUser() !== $this->getUser()) {
@@ -143,6 +152,12 @@ class ReclamationController extends AbstractController
                         $adminNotification->setType('status');
                         $adminNotification->setIsRead(false);
                         $entityManager->persist($adminNotification);
+
+                        $notifierEmailService->send(
+                            $reclamation->getUser(),
+                            sprintf('Reclamation #%d status updated', $reclamation->getId()),
+                            sprintf('Your reclamation #%d status changed to %s.', $reclamation->getId(), ucfirst(str_replace('_', ' ', $status)))
+                        );
                     }
                 }
 
