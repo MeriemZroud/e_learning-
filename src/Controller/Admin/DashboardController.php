@@ -396,6 +396,8 @@ class DashboardController extends AbstractDashboardController
     {
         return Assets::new()
             ->addCssFile('styles/admin-theme.css')
+            ->addCssFile('styles/language-selector.css')
+            ->addJsFile('js/language-selector.js')
             ->addJsFile('js/admin-navigation.js');
     }
 

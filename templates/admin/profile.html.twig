@@ -11,7 +11,10 @@
                 <h1>Profile settings</h1>
                 <p>You can change only the fields you want. Empty fields are ignored.</p>
             </div>
-            <a class="admin-profile-back" href="{{ path('app_admin_dashboard') }}">Back to admin</a>
+            <div class="admin-profile-header__actions">
+                {% include 'partials/_language_selector.html.twig' %}
+                <a class="admin-profile-back" href="{{ path('app_admin_dashboard') }}">Back to admin</a>
+            </div>
         </header>
 
         <div class="admin-profile-layout">

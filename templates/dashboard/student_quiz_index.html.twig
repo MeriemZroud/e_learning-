@@ -16,13 +16,16 @@
                 <a href="{{ path('app_student_about') }}">About us</a>
                 <a href="{{ path('app_reclamation_index') }}">Reclamations</a>
             </nav>
-            <div class="student-user">
+            <div class="student-topbar__actions">
+                {% include 'partials/_language_selector.html.twig' %}
+                <div class="student-user">
                 {% if app.user and app.user.profileImage %}
                     <img class="student-user__avatar student-user__avatar-image" src="{{ asset('uploads/profile/' ~ app.user.profileImage) }}" alt="{{ student_name }} avatar">
                 {% else %}
                     <span class="student-user__avatar">{{ student_name|slice(0, 1)|upper }}</span>
                 {% endif %}
                 <span class="student-user__name">{{ student_name }}</span>
+                </div>
             </div>
         </header>
 

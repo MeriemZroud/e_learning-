@@ -204,12 +204,20 @@ body.ea,
     color: var(--lw-muted);
 }
 
+.admin-profile-header__actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: nowrap;
+}
+
 .admin-profile-back {
     border-radius: 999px;
     border: 1px solid var(--lw-line);
     padding: 0.55rem 0.95rem;
     color: var(--lw-primary-dark);
     text-decoration: none;
+    white-space: nowrap;
 }
 
 .admin-profile-layout {
