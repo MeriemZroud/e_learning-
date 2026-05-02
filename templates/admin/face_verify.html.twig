@@ -1,0 +1,101 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Admin Face Verification{% endblock %}
+
+{% block body %}
+<main style="min-height: 100vh; display: grid; place-items: center; background: linear-gradient(145deg, #f4f8fb, #e8eff6); padding: 2rem;">
+    <section style="width: min(860px, 96vw); background: #ffffff; border-radius: 20px; box-shadow: 0 20px 50px rgba(14, 33, 56, 0.15); padding: 1.25rem;">
+        <header style="margin-bottom: 1rem;">
+            <h1 style="margin: 0; font-size: 1.6rem; color: #0b2c4d;">Admin Face Verification</h1>
+            <p style="margin: 0.5rem 0 0; color: #4e6177;">Complete facial verification to access the administrator space.</p>
+        </header>
+
+        {% if not has_reference_image %}
+            <div style="padding: 0.9rem; border-radius: 12px; background: #fff3cd; color: #5a4507; margin-bottom: 1rem;">
+                No reference face image found. Please upload your profile image first.
+                <a href="{{ profile_url }}" style="margin-left: 0.35rem; font-weight: 700; color: #2b4f7d;">Go to profile</a>
+            </div>
+        {% endif %}
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div style="background: #0b1f32; border-radius: 14px; overflow: hidden; min-height: 320px; display: grid; place-items: center;">
+                <video id="faceVideo" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
+            </div>
+            <div style="background: #f3f7fb; border-radius: 14px; padding: 1rem;">
+                <p style="margin-top: 0; color: #18344f;">Keep your face centered, remove sunglasses, and ensure good lighting.</p>
+                <button id="captureBtn" type="button" style="display: inline-block; width: 100%; background: linear-gradient(120deg, #1e6bb8, #14967f); color: #fff; border: 0; border-radius: 12px; padding: 0.8rem; font-weight: 700; cursor: pointer;">
+                    Capture & Verify
+                </button>
+                <p id="faceStatus" style="margin: 1rem 0 0; color: #2b445d; font-weight: 600;">Waiting for capture...</p>
+                <canvas id="faceCanvas" width="640" height="480" style="display: none;"></canvas>
+            </div>
+        </div>
+    </section>
+</main>
+
+<script>
+(function () {
+    const video = document.getElementById('faceVideo');
+    const canvas = document.getElementById('faceCanvas');
+    const captureBtn = document.getElementById('captureBtn');
+    const status = document.getElementById('faceStatus');
+
+    async function startCamera() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: {
+                    width: { ideal: 640 },
+                    height: { ideal: 480 },
+                    facingMode: 'user'
+                },
+                audio: false
+            });
+            video.srcObject = stream;
+        } catch (error) {
+            status.textContent = 'Camera access denied or unavailable.';
+            captureBtn.disabled = true;
+        }
+    }
+
+    async function verifyFace() {
+        if (!video.srcObject) {
+            status.textContent = 'Camera is not ready.';
+            return;
+        }
+
+        const context = canvas.getContext('2d');
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const imageBase64 = canvas.toDataURL('image/jpeg', 0.9);
+
+        status.textContent = 'Verifying face...';
+        captureBtn.disabled = true;
+
+        try {
+            const response = await fetch('{{ path('app_admin_face_check') }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ image: imageBase64 })
+            });
+
+            const data = await response.json();
+            if (!response.ok || !data.success) {
+                status.textContent = data.message || 'Face verification failed.';
+                captureBtn.disabled = false;
+                return;
+            }
+
+            status.textContent = 'Success. Redirecting to admin dashboard...';
+            window.location.href = data.redirect;
+        } catch (error) {
+            status.textContent = 'Face API is unreachable. Start Flask API and try again.';
+            captureBtn.disabled = false;
+        }
+    }
+
+    captureBtn.addEventListener('click', verifyFace);
+    startCamera();
+})();
+</script>
+{% endblock %}

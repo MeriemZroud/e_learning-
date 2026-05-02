@@ -24,5 +24,10 @@ services:
         arguments:
             $recaptchaSecret: '%env(RECAPTCHA_SECRET_KEY)%'
 
+    App\Service\AdminFaceRecognitionService:
+        arguments:
+            $faceApiUrl: '%env(FACE_RECOGNITION_API_URL)%'
+            $faceTolerance: '%env(float:FACE_RECOGNITION_TOLERANCE)%'
+
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

@@ -78,10 +78,14 @@ class LoginAuthenticator extends AbstractLoginFormAuthenticator
         }
 
         $route = match ($roleCategory) {
-            'ROLE_ADMIN' => 'app_admin_dashboard',
+            'ROLE_ADMIN' => 'app_admin_face_verify',
             'ROLE_TEACHER' => 'app_teacher_dashboard',
             default => 'app_student_dashboard',
         };
+
+        if ($roleCategory === 'ROLE_ADMIN') {
+            $request->getSession()->set('admin_face_verified', false);
+        }
 
         return new RedirectResponse($this->urlGenerator->generate($route));
     }
