@@ -43,6 +43,7 @@ class AuthController extends AbstractController
                 'email' => '',
                 'role' => 'student',
             ],
+            'recaptcha_site_key' => $_ENV['RECAPTCHA_SITE_KEY'] ?? null,
         ]);
     }
 
@@ -55,6 +56,7 @@ class AuthController extends AbstractController
         UserRepository $userRepository,
         MailerInterface $mailer,
         LoggerInterface $logger,
+        \App\Service\RecaptchaService $recaptchaService,
     ): Response {
         $formData = [
             'first_name' => '',
@@ -68,75 +70,80 @@ class AuthController extends AbstractController
             if (!$this->isCsrfTokenValid('register', (string) $request->request->get('_token'))) {
                 $error = 'Invalid form submission. Please try again.';
             } else {
-                $formData['first_name'] = trim((string) $request->request->get('first_name', ''));
-                $formData['last_name'] = trim((string) $request->request->get('last_name', ''));
-                $formData['email'] = trim((string) $request->request->get('email', ''));
-                $password = (string) $request->request->get('password', '');
-                $passwordConfirmation = (string) $request->request->get('password_confirmation', '');
-                $formData['role'] = $this->normalizeRole((string) $request->request->get('role', 'student'));
-
-                if ($formData['first_name'] === '' || $formData['last_name'] === '' || $formData['email'] === '' || $password === '') {
-                    $error = 'Please fill in all required fields.';
-                } elseif (!filter_var($formData['email'], FILTER_VALIDATE_EMAIL)) {
-                    $error = 'Please enter a valid email address.';
-                } elseif ($password !== $passwordConfirmation) {
-                    $error = 'Passwords do not match.';
-                } elseif ($userRepository->findOneBy(['email' => $formData['email']]) instanceof User) {
-                    $error = 'This email is already registered.';
+                $recaptchaResponse = (string) $request->request->get('g-recaptcha-response', '');
+                if (!$recaptchaService->verify($recaptchaResponse, $request->getClientIp())) {
+                    $error = 'reCAPTCHA verification failed. Please try again.';
                 } else {
-                    $verificationCode = (string) random_int(100000, 999999);
-                    $expiresAt = time() + 900;
+                    $formData['first_name'] = trim((string) $request->request->get('first_name', ''));
+                    $formData['last_name'] = trim((string) $request->request->get('last_name', ''));
+                    $formData['email'] = trim((string) $request->request->get('email', ''));
+                    $password = (string) $request->request->get('password', '');
+                    $passwordConfirmation = (string) $request->request->get('password_confirmation', '');
+                    $formData['role'] = $this->normalizeRole((string) $request->request->get('role', 'student'));
 
-                    $hashedPassword = $passwordHasher->hashPassword((new User())->setEmail($formData['email']), $password);
+                    if ($formData['first_name'] === '' || $formData['last_name'] === '' || $formData['email'] === '' || $password === '') {
+                        $error = 'Please fill in all required fields.';
+                    } elseif (!filter_var($formData['email'], FILTER_VALIDATE_EMAIL)) {
+                        $error = 'Please enter a valid email address.';
+                    } elseif ($password !== $passwordConfirmation) {
+                        $error = 'Passwords do not match.';
+                    } elseif ($userRepository->findOneBy(['email' => $formData['email']]) instanceof User) {
+                        $error = 'This email is already registered.';
+                    } else {
+                        $verificationCode = (string) random_int(100000, 999999);
+                        $expiresAt = time() + 900;
 
-                    $request->getSession()->set(self::PENDING_REGISTRATION_KEY, [
-                        'first_name' => $formData['first_name'],
-                        'last_name' => $formData['last_name'],
-                        'email' => $formData['email'],
-                        'password_hash' => $hashedPassword,
-                        'role' => $formData['role'],
-                        'code' => $verificationCode,
-                        'expires_at' => $expiresAt,
-                    ]);
+                        $hashedPassword = $passwordHasher->hashPassword((new User())->setEmail($formData['email']), $password);
 
-                    // Reset previous email state before attempting a fresh send.
-                    $request->getSession()->remove(self::PENDING_REGISTRATION_MAIL_FAILED_KEY);
-
-                    try {
-                        $message = (new Email())
-                            ->from(new Address('meriemzroud7@gmail.com', 'LearnWay'))
-                            ->to($formData['email'])
-                            ->subject('Welcome to LearnWay - verification code')
-                            ->text(sprintf(
-                                "Welcome to LearnWay, %s %s.\n\nYour verification code is: %s\nIt expires in 15 minutes.\n\nIf you did not create this account, you can ignore this email.",
-                                $formData['first_name'],
-                                $formData['last_name'],
-                                $verificationCode
-                            ))
-                            ->html(sprintf(
-                                '<p>Welcome to LearnWay, <strong>%s %s</strong>.</p><p>Your verification code is <strong style="font-size:1.2rem;letter-spacing:0.2em;">%s</strong>.</p><p>This code expires in 15 minutes.</p>',
-                                htmlspecialchars($formData['first_name'], ENT_QUOTES),
-                                htmlspecialchars($formData['last_name'], ENT_QUOTES),
-                                $verificationCode
-                            ));
-
-                        $mailer->send($message);
-                    } catch (\Throwable $throwable) {
-                        $request->getSession()->set(self::PENDING_REGISTRATION_MAIL_FAILED_KEY, true);
-                        $logger->error('Registration verification email failed.', [
+                        $request->getSession()->set(self::PENDING_REGISTRATION_KEY, [
+                            'first_name' => $formData['first_name'],
+                            'last_name' => $formData['last_name'],
                             'email' => $formData['email'],
-                            'exception' => $throwable,
+                            'password_hash' => $hashedPassword,
+                            'role' => $formData['role'],
+                            'code' => $verificationCode,
+                            'expires_at' => $expiresAt,
                         ]);
-                    }
 
-                    if ($error === null) {
-                        if ($request->getSession()->get(self::PENDING_REGISTRATION_MAIL_FAILED_KEY)) {
-                            $this->addFlash('warning', 'Your account has been created, but the email could not be delivered. Use the verification code shown on the next page.');
-                        } else {
-                            $this->addFlash('success', 'Your account has been created. Check your email for the verification code.');
+                        // Reset previous email state before attempting a fresh send.
+                        $request->getSession()->remove(self::PENDING_REGISTRATION_MAIL_FAILED_KEY);
+
+                        try {
+                            $message = (new Email())
+                                ->from(new Address('meriemzroud7@gmail.com', 'LearnWay'))
+                                ->to($formData['email'])
+                                ->subject('Welcome to LearnWay - verification code')
+                                ->text(sprintf(
+                                    "Welcome to LearnWay, %s %s.\n\nYour verification code is: %s\nIt expires in 15 minutes.\n\nIf you did not create this account, you can ignore this email.",
+                                    $formData['first_name'],
+                                    $formData['last_name'],
+                                    $verificationCode
+                                ))
+                                ->html(sprintf(
+                                    '<p>Welcome to LearnWay, <strong>%s %s</strong>.</p><p>Your verification code is <strong style="font-size:1.2rem;letter-spacing:0.2em;">%s</strong>.</p><p>This code expires in 15 minutes.</p>',
+                                    htmlspecialchars($formData['first_name'], ENT_QUOTES),
+                                    htmlspecialchars($formData['last_name'], ENT_QUOTES),
+                                    $verificationCode
+                                ));
+
+                            $mailer->send($message);
+                        } catch (\Throwable $throwable) {
+                            $request->getSession()->set(self::PENDING_REGISTRATION_MAIL_FAILED_KEY, true);
+                            $logger->error('Registration verification email failed.', [
+                                'email' => $formData['email'],
+                                'exception' => $throwable,
+                            ]);
                         }
 
-                        return $this->redirectToRoute('app_verify_code');
+                        if ($error === null) {
+                            if ($request->getSession()->get(self::PENDING_REGISTRATION_MAIL_FAILED_KEY)) {
+                                $this->addFlash('warning', 'Your account has been created, but the email could not be delivered. Use the verification code shown on the next page.');
+                            } else {
+                                $this->addFlash('success', 'Your account has been created. Check your email for the verification code.');
+                            }
+
+                            return $this->redirectToRoute('app_verify_code');
+                        }
                     }
                 }
             }
@@ -147,6 +154,7 @@ class AuthController extends AbstractController
             'last_username' => '',
             'error' => $error,
             'form_data' => $formData,
+            'recaptcha_site_key' => $_ENV['RECAPTCHA_SITE_KEY'] ?? null,
         ]);
     }
 

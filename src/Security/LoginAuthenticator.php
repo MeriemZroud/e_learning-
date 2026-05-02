@@ -12,6 +12,7 @@ use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Exception\CustomUserMessageAuthenticationException;
 use Symfony\Component\Security\Core\Exception\UserNotFoundException;
 use Symfony\Component\Security\Http\Authenticator\AbstractLoginFormAuthenticator;
+use App\Service\RecaptchaService;
 use Symfony\Component\Security\Http\Authenticator\Passport\Badge\CsrfTokenBadge;
 use Symfony\Component\Security\Http\Authenticator\Passport\Badge\RememberMeBadge;
 use Symfony\Component\Security\Http\Authenticator\Passport\Credentials\PasswordCredentials;
@@ -22,6 +23,7 @@ class LoginAuthenticator extends AbstractLoginFormAuthenticator
     public function __construct(
         private readonly UrlGeneratorInterface $urlGenerator,
         private readonly UserRepository $userRepository,
+        private readonly RecaptchaService $recaptchaService,
     ) {
     }
 
@@ -32,6 +34,11 @@ class LoginAuthenticator extends AbstractLoginFormAuthenticator
 
     public function authenticate(Request $request): Passport
     {
+        $recaptchaResponse = (string) $request->request->get('g-recaptcha-response', '');
+        if (!$this->recaptchaService->verify($recaptchaResponse, $request->getClientIp())) {
+            throw new CustomUserMessageAuthenticationException('reCAPTCHA verification failed. Please try again.');
+        }
+
         $email = trim((string) $request->request->get('email', ''));
         $password = (string) $request->request->get('password', '');
         $csrfToken = (string) $request->request->get('_token', '');

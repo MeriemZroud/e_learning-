@@ -53,6 +53,9 @@
                         <a class="auth-small-link" href="{{ path('app_forgot_password') }}">Forgot your password?</a>
                     </p>
 
+                    <div style="margin-top:0.75rem;">
+                        <div class="g-recaptcha" data-sitekey="{{ recaptcha_site_key }}"></div>
+                    </div>
                     <button class="auth-submit" type="submit">Login</button>
                 </form>
             {% else %}
@@ -103,10 +106,14 @@
                         </div>
                     </div>
 
+                    <div style="margin-top:0.75rem;">
+                        <div class="g-recaptcha" data-sitekey="{{ recaptcha_site_key }}"></div>
+                    </div>
                     <button class="auth-submit" type="submit">Register</button>
                 </form>
             {% endif %}
         </div>
     </section>
 </main>
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
 {% endblock %}
