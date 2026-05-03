@@ -1089,7 +1089,7 @@ a {
 }
 
 .learnway-tiles {
-    min-height: 190px;
+    min-height: 320px;
     border-radius: 18px;
     overflow: hidden;
     position: relative;
@@ -1132,6 +1132,16 @@ a {
     background:
         radial-gradient(circle at 72% 26%, rgba(255, 255, 255, 0.22), transparent 26%),
         linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0.08));
+}
+
+.learnway-tiles--start,
+.learnway-tiles--teacher {
+    background-image:
+        linear-gradient(180deg, rgba(31, 52, 64, 0.18), rgba(31, 52, 64, 0.72)),
+        var(--learnway-tile-image);
+    background-position: center, center;
+    background-size: cover, cover;
+    background-repeat: no-repeat, no-repeat;
 }
 
 .learnway-footer {
@@ -1392,9 +1402,18 @@ a {
 
 .student-related-card__image {
     height: 170px;
-    background:
+    background-image:
         radial-gradient(circle at 16% 18%, rgba(255, 255, 255, 0.34), transparent 40%),
         linear-gradient(130deg, #8fd7d8, #5bb4b8 65%, #418f94);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.student-related-card[style*="--card-image"] .student-related-card__image {
+    background-image:
+        radial-gradient(circle at 16% 18%, rgba(255, 255, 255, 0.34), transparent 40%),
+        var(--card-image);
 }
 
 .student-related-card__content {
@@ -1447,9 +1466,18 @@ a {
 .student-workshop-card__image {
     border-radius: 10px;
     height: 88px;
-    background:
+    background-image:
         radial-gradient(circle at 22% 24%, rgba(255, 255, 255, 0.36), transparent 36%),
         linear-gradient(145deg, #8ed5d7 0%, #5eaeb2 58%, #3b7f84 100%);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.student-workshop-card[style*="--card-image"] .student-workshop-card__image {
+    background-image:
+        radial-gradient(circle at 22% 24%, rgba(255, 255, 255, 0.36), transparent 36%),
+        var(--card-image);
 }
 
 .student-workshop-card h3 {
