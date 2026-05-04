@@ -1367,7 +1367,7 @@ a {
 
 .student-mini-card__image {
     width: 100%;
-    height: 78px;
+    height: 132px;
     display: block;
     object-fit: cover;
     border-radius: 9px;
@@ -1375,7 +1375,7 @@ a {
 
 .student-mini-card__thumb {
     border-radius: 9px;
-    height: 78px;
+    height: 132px;
     background:
         radial-gradient(circle at 78% 20%, rgba(255, 255, 255, 0.55), transparent 35%),
         linear-gradient(135deg, #5da9ad 0%, #2b5f63 55%, #6bc3bf 100%);

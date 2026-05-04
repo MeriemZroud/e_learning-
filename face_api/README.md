@@ -14,7 +14,7 @@ It uses OpenCV (Haar face detection + ORB feature matching).
 {
   "captured_image_base64": "data:image/jpeg;base64,...",
   "reference_image_base64": "data:image/jpeg;base64,...",
-  "tolerance": 0.5
+  "tolerance": 0.7
 }
 ```
 
@@ -24,7 +24,7 @@ It uses OpenCV (Haar face detection + ORB feature matching).
 {
   "match": true,
   "distance": 0.38421,
-  "tolerance": 0.5
+  "tolerance": 0.7
 }
 ```
 

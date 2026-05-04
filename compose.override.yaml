@@ -6,6 +6,19 @@ services:
       - "5432"
 ###< doctrine/doctrine-bundle ###
 
+  face-api:
+    image: python:3.11-slim
+    working_dir: /app
+    volumes:
+      - ./face_api:/app
+    command: sh -c "pip install --no-cache-dir -r requirements.txt && python app.py"
+    environment:
+      FACE_API_HOST: 0.0.0.0
+      FACE_API_PORT: 5001
+    ports:
+      - "5001:5001"
+    restart: unless-stopped
+
 ###> symfony/mailer ###
   mailer:
     image: axllent/mailpit

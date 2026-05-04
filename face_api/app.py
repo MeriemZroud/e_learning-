@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import os
 from typing import Any
 
 import cv2
@@ -45,7 +46,13 @@ def _extract_face(gray_image: np.ndarray) -> np.ndarray:
     return face
 
 
-def _face_distance(face_a: np.ndarray, face_b: np.ndarray) -> float:
+def _prepare_for_matching(face: np.ndarray) -> np.ndarray:
+    face = cv2.GaussianBlur(face, (3, 3), 0)
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+    return clahe.apply(face)
+
+
+def _orb_distance(face_a: np.ndarray, face_b: np.ndarray) -> float:
     orb = cv2.ORB_create(nfeatures=500)
     keypoints_a, descriptors_a = orb.detectAndCompute(face_a, None)
     keypoints_b, descriptors_b = orb.detectAndCompute(face_b, None)
@@ -72,6 +79,24 @@ def _face_distance(face_a: np.ndarray, face_b: np.ndarray) -> float:
     return float(distance)
 
 
+def _histogram_distance(face_a: np.ndarray, face_b: np.ndarray) -> float:
+    hist_a = cv2.calcHist([face_a], [0], None, [64], [0, 256])
+    hist_b = cv2.calcHist([face_b], [0], None, [64], [0, 256])
+    cv2.normalize(hist_a, hist_a)
+    cv2.normalize(hist_b, hist_b)
+
+    correlation = float(cv2.compareHist(hist_a, hist_b, cv2.HISTCMP_CORREL))
+    correlation = max(-1.0, min(1.0, correlation))
+    return 1.0 - ((correlation + 1.0) / 2.0)
+
+
+def _pixel_distance(face_a: np.ndarray, face_b: np.ndarray) -> float:
+    face_a = face_a.astype(np.float32) / 255.0
+    face_b = face_b.astype(np.float32) / 255.0
+    diff = np.mean(np.abs(face_a - face_b))
+    return float(max(0.0, min(1.0, diff)))
+
+
 @app.get("/health")
 def health() -> Any:
     return jsonify({"ok": True})
@@ -83,7 +108,7 @@ def verify_face() -> Any:
 
     captured_b64 = str(data.get("captured_image_base64", "")).strip()
     reference_b64 = str(data.get("reference_image_base64", "")).strip()
-    tolerance = float(data.get("tolerance", 0.5))
+    tolerance = float(data.get("tolerance", 0.7))
 
     if captured_b64 == "" or reference_b64 == "":
         return jsonify({
@@ -98,10 +123,13 @@ def verify_face() -> Any:
         captured_gray = cv2.cvtColor(captured_image, cv2.COLOR_BGR2GRAY)
         reference_gray = cv2.cvtColor(reference_image, cv2.COLOR_BGR2GRAY)
 
-        captured_face = _extract_face(captured_gray)
-        reference_face = _extract_face(reference_gray)
+        captured_face = _prepare_for_matching(_extract_face(captured_gray))
+        reference_face = _prepare_for_matching(_extract_face(reference_gray))
 
-        distance = _face_distance(captured_face, reference_face)
+        orb_distance = _orb_distance(captured_face, reference_face)
+        histogram_distance = _histogram_distance(captured_face, reference_face)
+        pixel_distance = _pixel_distance(captured_face, reference_face)
+        distance = min(1.0, (0.55 * orb_distance) + (0.25 * histogram_distance) + (0.20 * pixel_distance))
         is_match = bool(distance <= tolerance)
     except ValueError as exc:
         return jsonify({"match": False, "reason": str(exc)}), 422
@@ -114,4 +142,8 @@ def verify_face() -> Any:
 
 
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=5001, debug=True)
+    app.run(
+        host=os.environ.get("FACE_API_HOST", "0.0.0.0"),
+        port=int(os.environ.get("FACE_API_PORT", "5001")),
+        debug=True,
+    )

@@ -133,65 +133,25 @@
                 <h2>Reading blog list</h2>
             </div>
             <div class="student-mini-grid">
-                {% for item in ['UI/UX', 'React', 'PHP', 'JavaScript'] %}
-                    <article class="student-mini-card">
-                        <div class="student-mini-card__thumb"></div>
-                        <h3>{{ item }}</h3>
-                    </article>
-                {% endfor %}
-            </div>
-        </section>
-
-        <section class="student-section student-section--soft">
-            <div class="student-section__head">
-                <h2>Related blog</h2>
-                <a href="#">See all</a>
-            </div>
-            <div class="student-related-grid">
-                {% for i in 1..2 %}
-                    <article class="student-related-card">
-                        <div class="student-related-card__image"></div>
-                        <div class="student-related-card__content">
-                            <p class="student-related-card__tag">UX Design</p>
-                            <h3>Class adds 500 million to its balance sheet for a growth-ready school solution</h3>
-                            <p>
-                                Class is focused on helping every student stay connected to collaborative,
-                                research-backed lessons.
-                            </p>
-                            <div class="student-related-card__meta">
-                                <span>Meriem Zroud</span>
-                                <span>9 min</span>
-                            </div>
-                        </div>
-                    </article>
-                {% endfor %}
-            </div>
-        </section>
-
-        <section class="student-section">
-            <div class="student-section__head">
-                <h2>Marketing articles</h2>
-                <a href="#">See all</a>
-            </div>
-            <div class="student-workshop-grid">
-                {% for item in [
-                    'AWS Certified solutions architect',
-                    'AWS Certified solutions architect',
-                    'AWS Certified solutions architect',
-                    'AWS Certified solutions architect'
+                {% set blogItems = [
+                    { title: 'UI/UX', image: 'ux .jpg' },
+                    { title: 'React', image: 'react.png' },
+                    { title: 'PHP', image: 'php-logo.png' },
+                    { title: 'JavaScript', image: 'javascript.jpg' },
+                    { title: 'Symfony', image: 'symfony.png' }
                 ] %}
-                    <article class="student-workshop-card">
-                        <div class="student-workshop-card__image"></div>
-                        <h3>{{ item }}</h3>
-                        <p>Build confidence with project-based material, quizzes, and guided practice sessions.</p>
-                        <div class="student-workshop-card__meta">
-                            <span>by Lina</span>
-                            <span>$80</span>
-                        </div>
+                {% for item in blogItems %}
+                    <article class="student-mini-card">
+                        <img class="student-mini-card__image" src="{{ asset(item.image) }}" alt="{{ item.title }} illustration">
+                        <h3>{{ item.title }}</h3>
                     </article>
                 {% endfor %}
             </div>
         </section>
+
+    
+
+       
 
         <footer class="student-footer">
             <p class="student-footer__brand">LearnWay</p>
