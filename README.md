@@ -145,9 +145,6 @@ The face recognition system is powered by a **Python Flask service** connected t
 ---
 
 
-
----
-
 ### 📊 Admin Dashboard
 
 ![Admin Dashboard](https://raw.githubusercontent.com/MeriemZroud/e_learning-/main/public/admin.png)
