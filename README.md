@@ -144,9 +144,7 @@ The face recognition system is powered by a **Python Flask service** connected t
 
 ---
 
-### 🤖 Chatbot
 
-![Chatbot](https://raw.githubusercontent.com/MeriemZroud/e_learning-/main/public/chatbot.png)
 
 ---
 
